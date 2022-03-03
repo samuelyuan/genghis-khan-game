@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Genghis Khan Game</title>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/jquery-jvectormap-2.0.5.css" type="text/css" media="screen"/>
+  <script src="/js/jquery-3.5.1.min.js"></script>
+  <script src="/js/jquery-jvectormap-2.0.5.min.js"></script>
+  <script src="/js/popper.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <script src="/game/map/eurasia-map.js"></script>
+  <audio src="/audio/mainMusic.mp3" loop></audio>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-2"></div>
+      <div class="col-sm-8">
+        <h2>Genghis Khan Game</h2>
+        <p><b>Objective:</b> Conquer all countries in the known world.</p>
+        <p>
+          <button class="btn btn-info" id="instructionsButton" data-toggle="modal" data-target="#instructionsModal">
+            Instructions
+          </button>
+          <button class="btn btn-dark" id="audioButton">
+            Enable audio
+          </button>
+        </p>
+        <div id="world-map">
+          <div class="card">
+            <div class="card-body" id="homeCountryStatus"></div>
+          </div>
+          <div id="world-map-container" style="width: 800px; height: 600px"></div>
+        </div>
+        <div id="battle-map">
+          <div class="card">
+            <div class="card-body">
+              <button type="button" class="btn btn-success" id="buttonFightBattle">Fight</button>
+              <button type="button" class="btn btn-danger" id="buttonRetreatBattle">Retreat</button>
+            </div>
+          </div>
+          <canvas id="battleScreen" width="800" height="400"></canvas>
+          <div class="col">
+            <nav aria-label="...">
+              <ul class="pagination pagination-lg">
+                <li class="list-group-item">
+                  <p>
+                    <div id="itemCurrentCountryHealth" style="width: 200px; height: 10px; background: #ff5100;"></div>
+                  </p>
+                  <p id="itemCurrentCountryName"></p>
+                </li>
+                <li class="list-group-item" id="itemTerrain"></li>
+                <li class="list-group-item">
+                  <p>
+                    <div id="itemEnemyCountryHealth" style="width: 200px; height: 10px; background: #0051ff;"></div>
+                  </p>
+                  <p id="itemEnemyCountryName"></p>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-2"></div>
+    </div>
+  </div>
+  <script src="/game/Main.js" type="module"></script>
+
+  <div class="modal fade" id="instructionsModal" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Instructions</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            <b>1. Select a country to invade</b><br/>
+
+            You are presented with a map - you can only invade countries adjacent to territories
+            you have already conquered. Click on countries to see their strengths and terrain types.
+          </p>
+          <p>
+            To invade a country, you click the "Declare War" button.
+          </p>
+          <p>
+            <b>2. Buy units</b><br/>
+
+            To buy units, you can click on any tile in the staging area to place units. Your units will start at level 0, but
+            they will gain experience as they fight and become stronger.
+
+            If you click on a unit in the staging area, you can upgrade it.
+          </p>
+          <p>
+            <b>3. Fight</b><br/>
+
+            Once you have positioned your units in the staging area, click the "Fight" button to begin the battle.
+          </p>
+          <p>
+            If the battle is going poorly, you can click the "Retreat" button to get out of that battle and find another country
+            to invade. Retreating will cost you 10% of the power you had before you began the current battle.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="countryModal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title"></h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal" id="declareWar">Declare War</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade" id="countryModalInvalid" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title"></h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body"></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade" id="newGameModal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title"></h4>
+        </div>
+        <div class="modal-body"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" data-dismiss="modal" id="newGame">New Game</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
