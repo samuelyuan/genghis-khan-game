@@ -1,6 +1,5 @@
 import { Castle } from './Castle.js';
-import { Enemy } from './Enemy.js';
-import { Player } from './Player.js';
+import { SoldierFactory } from './SoldierFactory.js';
 import { UnitStats } from './UnitStats.js';
 
 class BattleScreenRender {
@@ -22,15 +21,6 @@ class BattleScreenRender {
 
     this.resetGame();
 
-    this.landType = null;
-
-    this.solveId = 0;
-    this.maxSolveId = 100;
-    this.diceInter = 0;
-    this.maxDiceInter = 25;
-
-    this.hitDis = [500, 500, 500, 500, 500];
-
     // Only load images once
     this.imageArr = [];
     this.totalImages = 0;
@@ -38,6 +28,7 @@ class BattleScreenRender {
     this.loadAllImages();
 
     this.unitStats = new UnitStats();
+    this.soldierFactory = new SoldierFactory(this.unitStats, this.worldY, this.tileRow);
   }
 
   loadAllImages() {
@@ -209,7 +200,12 @@ class BattleScreenRender {
     };
     var typeId = 1;
     var playerLevel = 0;
-    var playerUnit = this.initUnit("player", tileObj, typeId, playerLevel);
+    var mapData = {
+      landType: this.landType,
+      playerCastle: this.playerCastle,
+      enemyCastle: this.enemyCastle
+    };
+    var playerUnit = this.soldierFactory.createPlayerUnit(tileObj, typeId, playerLevel, mapData);
     this.playerUnits.push(playerUnit);
     this.occupiedPlayerSquares.push(key);
     this.renderPlayerSoldiers();
@@ -226,34 +222,14 @@ class BattleScreenRender {
           centerX: this.enemyShape[i].x + this.enemyCoordOffset,
           centerY: this.enemyShape[i].y
         };
-        var enemyUnit = this.initUnit("enemy", tileObj, typeId, this.enemyLevel[i]);
+        var mapData = {
+          landType: this.landType,
+          playerCastle: this.playerCastle,
+          enemyCastle: this.enemyCastle
+        };
+        var enemyUnit = this.soldierFactory.createEnemyUnit(tileObj, typeId, this.enemyLevel[i], mapData);
         this.enemyUnits.push(enemyUnit);
       }
-    }
-  }
-
-  initUnit(family, tile, typeId, level) {
-    var soldier;
-    var maxHitPoints = this.unitStats.getMaxHitPoints(level, typeId, this.landType);
-    var unitPower = this.unitStats.getUnitPower(level, typeId, this.landType);
-    var unitData = {
-      playerCastle: this.playerCastle,
-      enemyCastle: this.enemyCastle,
-      worldY: this.worldY,
-      tileRow: this.tileRow,
-      xPos: tile.centerX,
-      yPos: tile.centerY,
-      typeId: typeId,
-      level: level,
-      maxHitPoints: maxHitPoints,
-      unitPower: unitPower
-    };
-    if (family === "player") {
-      return new Player(unitData);
-    } else if (family === "enemy") {
-      return new Enemy(unitData);
-    } else {
-      throw new Error("Invalid family name: " + family);
     }
   }
 
@@ -314,7 +290,12 @@ class BattleScreenRender {
         centerX: unit.xPos,
         centerY: unit.yPos
       };
-      var updatedUnit = this.initUnit("player", tileObj, unit.typeId, unit.currentLevel);
+      var mapData = {
+        landType: this.landType,
+        playerCastle: this.playerCastle,
+        enemyCastle: this.enemyCastle
+      };
+      var updatedUnit = this.soldierFactory.createPlayerUnit(tileObj, unit.typeId, unit.currentLevel, mapData);
       updatedPlayerUnits.push(updatedUnit);
     }
     this.playerUnits = updatedPlayerUnits;
@@ -345,6 +326,7 @@ class BattleScreenRender {
     this.enemyCastle = null;
     this.enemyShape = null;
     this.enemyLevel = null;
+    this.landType = null;
 
     this.enemyUnits = [];
 

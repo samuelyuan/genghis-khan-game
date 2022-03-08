@@ -264,14 +264,14 @@ class WorldMapRender {
 
     var conqueredWorld = self.countryData.every((country) => country.isConquered);
     if (conqueredWorld) {
-      self.resetGame();
-
       var modal = $('#newGameModal');
       modal.find('.modal-title').text("Victory");
       modal.find('.modal-body').text("You have conquered the entire known world.");
       modal.find("#newGame").on("click", function() {
         $("#battle-map").hide();
         $("#world-map").show();
+
+        self.resetGame();
       });
       modal.modal();
     }

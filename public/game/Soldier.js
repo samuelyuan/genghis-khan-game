@@ -182,36 +182,28 @@ class Soldier {
     var currentX = this.xPos;
     var currentY = this.yPos;
 
-    var allEnemyUnits = [];
-    var enemyUnitsWithinMeleeUnit = [];
-    var enemyUnitsWithinRangedUnit = [];
-    var enemyUnitsAttack = [];
-    var enemyUnitsMatching = [];
-    // Get the distance of this unit to all rival units and find the units close enough for attacking
-    for (var i = 0; i < rivalUnits.length; i++) {
-      var rivalUnit = rivalUnits[i];
-      if (rivalUnit.isDead) {
-        continue;
-      }
-      var rivalX = rivalUnit.xPos;
-      var rivalY = rivalUnit.yPos;
-      var deltaX = rivalX - currentX;
-      var deltaY = rivalY - currentY;
-      var unitDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      var deltaYAbs = Math.abs(deltaY);
+    var allEnemyUnits = rivalUnits
+      .filter(rivalUnit => !rivalUnit.isDead)
+      .map(function(rivalUnit) {
+        var rivalX = rivalUnit.xPos;
+        var rivalY = rivalUnit.yPos;
+        var deltaX = rivalX - currentX;
+        var deltaY = rivalY - currentY;
+        var unitDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        var deltaYAbs = Math.abs(deltaY);
 
-      var rivalUnitDistance = {
-        rival: rivalUnit,
-        dist: unitDist,
-        dy: deltaYAbs
-      };
-      allEnemyUnits.push(rivalUnitDistance);
-      if (unitDist < this.hitDist) {
-        enemyUnitsWithinMeleeUnit.push(rivalUnitDistance);
-      }
-    }
+        // Get the distance of this unit to all rival units and find the units close enough for attacking
+        var rivalUnitDistance = {
+          rival: rivalUnit,
+          dist: unitDist,
+          dy: deltaYAbs
+        };
+        return rivalUnitDistance;
+      });
+    var enemyUnitsWithinMeleeUnit = allEnemyUnits.filter(rivalUnitDistance => rivalUnitDistance.dist < this.hitDist);
     // Check if there are any units for ranged units to attack
     // Ranged units can attack over longer distances
+    var enemyUnitsWithinRangedUnit = [];
     if (enemyUnitsWithinMeleeUnit.length > 0) {
       for (var i = 0; i < allEnemyUnits.length; i++) {
         var currentEnemyUnit = allEnemyUnits[i];
@@ -223,11 +215,7 @@ class Soldier {
       }
     }
     var candidateEnemyUnits = enemyUnitsWithinMeleeUnit.concat(enemyUnitsWithinRangedUnit);
-    for (var i = 0; i < candidateEnemyUnits.length; i++) {
-      var currentEnemyUnit = candidateEnemyUnits[i];
-      var enemyOfEnemy = currentEnemyUnit.rival;
-      enemyUnitsAttack.push(currentEnemyUnit);
-    }
+    var enemyUnitsAttack = [...candidateEnemyUnits];
     var enemyUnitsAttackCopy = [...enemyUnitsAttack];
     enemyUnitsAttackCopy.sort(function(a, b) {
       return a.dy - b.dy;
@@ -236,12 +224,7 @@ class Soldier {
       return;
     }
     var expectedDeltaY = enemyUnitsAttackCopy[0].dy;
-    for (var i = 0; i < enemyUnitsAttackCopy.length; i++) {
-      var currentEnemyUnit = enemyUnitsAttackCopy[i];
-      if (currentEnemyUnit.dy === expectedDeltaY) {
-        enemyUnitsMatching.push(currentEnemyUnit);
-      }
-    }
+    var enemyUnitsMatching = enemyUnitsAttackCopy.filter(unit => unit.dy === expectedDeltaY);
     enemyUnitsMatching.sort(function(a, b) {
       return a.dist - b.dist;
     });
