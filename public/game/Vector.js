@@ -13,18 +13,26 @@ class Vector {
     this.y = newY;
   }
 
-  getAng() {
-    return Math.atan2(this.y, this.x) * 57.29578;
+  getAngle() {
+    return this.radiansToDegrees(Math.atan2(this.y, this.x));
   }
 
-  setAng(angle) {
+  setAngle(angleInDegrees) {
     var length = this.getLength();
-    this.x = length * Math.cos(angle * 0.017453);
-    this.y = length * Math.sin(angle * 0.017453);
+    this.x = length * Math.cos(this.degreesToRadians(angleInDegrees));
+    this.y = length * Math.sin(this.degreesToRadians(angleInDegrees));
   }
 
   getLength() {
     return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  radiansToDegrees(radians) {
+    return radians * 180.0 / Math.PI;
+  }
+
+  degreesToRadians(degrees) {
+    return degrees * Math.PI / 180.0;
   }
 }
 

@@ -79,23 +79,7 @@ class Soldier {
       var otherYPos = aimTarget.yPos;
       var rotationDegrees = Math.atan2(otherYPos - unitYPos, otherXPos - unitXPos) * 57.29578;
       var moveSpeed = 0.1 * this.speedTimes;
-
-      var unitRotation = this.rotation;
-      var angleDelta = rotationDegrees - unitRotation;
-      angleDelta = angleDelta % 360;
-      angleDelta = angleDelta % 360 >= 0 ? angleDelta : angleDelta + 360;
-      var angleAbs = Math.abs(angleDelta);
-      var angleSign = angleAbs / angleDelta;
-
-      if (angleAbs > 1) {
-        if (angleAbs > 180) {
-          angleAbs = 360 - angleAbs;
-          angleSign = -angleSign;
-        }
-        unitRotation = unitRotation + (angleSign * angleAbs * moveSpeed);
-        this.v.setAng(unitRotation);
-        this.rotation = unitRotation;
-      }
+      this.updateUnitRotation(rotationDegrees, moveSpeed);
 
       if (this.aim.sType === "castle") {
         return;
@@ -112,23 +96,9 @@ class Soldier {
         this.v = this.initv.clone();
         this.sState = "walk";
       }
-      var rotationDegrees = this.initv.getAng();
-      var unitRotation = this.rotation;
+      var rotationDegrees = this.initv.getAngle();
       var moveSpeed = 0.05 * this.speedTimes;
-      var angleDelta = rotationDegrees - unitRotation;
-      angleDelta = angleDelta % 360;
-      angleDelta = angleDelta % 360 >= 0 ? angleDelta : angleDelta + 360;
-      var angleAbs = Math.abs(angleDelta);
-      angleSign = angleAbs / angleDelta;
-      if (angleAbs > 1) {
-        if (angleAbs > 180) {
-            angleAbs = 360 - angleAbs;
-            angleSign = -angleSign;
-         }
-         unitRotation = unitRotation + angleSign * angleAbs * moveSpeed;
-         this.v.setAng(unitRotation);
-         this.rotation = unitRotation;
-      }
+      this.updateUnitRotation(rotationDegrees, moveSpeed);
     }
 
     this.xPos = this.xPos + this.v.x * this.speedTimes;
@@ -143,6 +113,24 @@ class Soldier {
       if (this.xPos < this.rivalCastleXLine + this.standDist) {
         this.stAttackCastle(this.rivalCastleXLine + this.standDist);
       }
+    }
+  }
+
+  updateUnitRotation(rotationDegrees, moveSpeed) {
+    var unitRotation = this.rotation;
+    var angleDelta = rotationDegrees - unitRotation;
+    angleDelta = angleDelta % 360;
+    angleDelta = angleDelta % 360 >= 0 ? angleDelta : angleDelta + 360;
+    var angleAbs = Math.abs(angleDelta);
+    var angleSign = angleAbs / angleDelta;
+    if (angleAbs > 1) {
+      if (angleAbs > 180) {
+          angleAbs = 360 - angleAbs;
+          angleSign = -angleSign;
+       }
+       unitRotation = unitRotation + (angleSign * angleAbs * moveSpeed);
+       this.v.setAngle(unitRotation);
+       this.rotation = unitRotation;
     }
   }
 
@@ -205,26 +193,20 @@ class Soldier {
     // Ranged units can attack over longer distances
     var enemyUnitsWithinRangedUnit = [];
     if (enemyUnitsWithinMeleeUnit.length > 0) {
-      for (var i = 0; i < allEnemyUnits.length; i++) {
-        var currentEnemyUnit = allEnemyUnits[i];
-        if (currentEnemyUnit.dist < this.hitDist + this.rangeOffset) {
-          if (currentEnemyUnit.dist > this.hitDist) {
-            enemyUnitsWithinRangedUnit.push(currentEnemyUnit);
-          }
-        }
-      }
+      enemyUnitsWithinRangedUnit = allEnemyUnits
+        .filter(enemyUnit => enemyUnit.dist < this.hitDist + this.rangeOffset)
+        .filter(enemyUnit => enemyUnit.dist > this.hitDist);
     }
     var candidateEnemyUnits = enemyUnitsWithinMeleeUnit.concat(enemyUnitsWithinRangedUnit);
     var enemyUnitsAttack = [...candidateEnemyUnits];
-    var enemyUnitsAttackCopy = [...enemyUnitsAttack];
-    enemyUnitsAttackCopy.sort(function(a, b) {
+    enemyUnitsAttack.sort(function(a, b) {
       return a.dy - b.dy;
     });
-    if (enemyUnitsAttackCopy.length === 0) {
+    if (enemyUnitsAttack.length === 0) {
       return;
     }
-    var expectedDeltaY = enemyUnitsAttackCopy[0].dy;
-    var enemyUnitsMatching = enemyUnitsAttackCopy.filter(unit => unit.dy === expectedDeltaY);
+    var expectedDeltaY = enemyUnitsAttack[0].dy;
+    var enemyUnitsMatching = enemyUnitsAttack.filter(unit => unit.dy === expectedDeltaY);
     enemyUnitsMatching.sort(function(a, b) {
       return a.dist - b.dist;
     });
