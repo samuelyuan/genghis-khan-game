@@ -5,10 +5,10 @@
   "main": "server.js",
   "dependencies": {
     "ejs": "^3.1.10",
-    "express": "^4.19.2",
+    "express": "^4.21.0",
     "http": "^0.0.1-security",
-    "jsvectormap": "^1.5.3",
-    "serve-static": "^1.15.0"
+    "jsvectormap": "^1.6.0",
+    "serve-static": "^1.16.2"
   },
   "devDependencies": {},
   "scripts": {
