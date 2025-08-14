@@ -43,6 +43,13 @@ class Soldier {
     // Attack
     this.aim = null;
     this.rivalCastle = null;
+    
+    // Initialize missing properties
+    this.initv = new Vector(0, 0);
+    this.v = new Vector(0, 0);
+    this.sFamily = unitData.sFamily || "player";
+    this.rivalCastleXLine = unitData.rivalCastleXLine || 0;
+    this.unitBeingAttackedBy = null;
   }
 
   runFrame(rivalUnits) {
