@@ -12,9 +12,9 @@ const server = http.createServer(app);
 
 // Settings
 app.set('port', process.env.PORT || 3000);
-app.set('views', join(__dirname, 'views'));
+app.set('views', join(__dirname, 'dist', 'views'));
 app.set('view engine', 'ejs');
-app.use(serveStatic(join(__dirname, 'public')));
+app.use(serveStatic(join(__dirname, 'dist', 'public')));
 
 const homepage = (req, res) => {
   res.render('index', {});

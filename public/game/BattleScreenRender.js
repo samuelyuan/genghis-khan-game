@@ -277,6 +277,15 @@ class BattleScreenRender {
     $("#itemEnemyCountryHealth").css("width", enemyCastleHealthPercent + "px");
   }
 
+  setCountryNames(playerCountryName, enemyCountryName) {
+    $("#itemCurrentCountryName").text(playerCountryName);
+    $("#itemEnemyCountryName").text(enemyCountryName);
+  }
+
+  setTerrainInfo(landType) {
+    $("#itemTerrain").html("<p><b>Terrain:</b> " + landType + "</p>");
+  }
+
   initBattle() {
     this.isBattleStarted = true;
     this.isVictory = false;

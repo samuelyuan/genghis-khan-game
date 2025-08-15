@@ -101,16 +101,9 @@ export class MapCountries {
     const formationId = Math.ceil(Math.random() * 10) + (typeId - 1) * 10;
     let power = 0;
     const numSoldiers = 6 + (typeId * 2);
-    
-    // Type assertion - we know this exists based on the formationId calculation
-    const formationData = this.armyFormations.data[`shape${formationId}`] as any[];
-    
-    if (!formationData) {
-      throw new Error(`Formation data not found for shape${formationId}`);
-    }
-
+    const formationData = this.armyFormations.data[`shape${formationId}`];
     const levelArr: number[] = [];
-    
+
     for (let i = 0; i < formationData.length; i++) {
       const unitTypeId = formationData[i].typeId;
       const randomOffset = (Math.random() - Math.random()) * 3;
@@ -138,8 +131,8 @@ export class MapCountries {
     };
   }
 
-  private getRandomNum(max: number, min: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+  private getRandomNum(baseNum: number, num: number): number {
+    return baseNum + Math.floor(Math.random() * num);
   }
 
   // Helper methods for game logic

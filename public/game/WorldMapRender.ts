@@ -36,7 +36,7 @@ const interest = 0.1;
 export class WorldMapRender {
   private countryData: Country[];
   private map: jvm.Map;
-  private gold: number = 400;
+  public gold: number = 400;
 
   constructor(countryData: Country[]) {
     $("#battle-map").hide();
@@ -139,18 +139,12 @@ export class WorldMapRender {
     });
   }
 
-  private updateGold(amount: number): void {
+  public updateGold(amount: number): void {
     this.gold = amount;
-    $("#gold").text(amount);
-    
-    // Update home country status
-    const power = 0; // battleScreenRender.calculateCountryPower(this.gold * 5);
+    const power = battleScreenRender.calculateCountryPower(this.gold * 5);
     const conqueredCountries = this.countryData.filter((country) => country.isConquered).length;
     const totalCountries = this.countryData.length;
-    $("#homeCountryStatus").html("<b>Country:</b> Mongolia"
-      + ", <b>Power:</b> " + power
-      + ", <b>Gold:</b> " + this.gold
-      + ", <b>Conquered:</b> " + conqueredCountries + "/" + totalCountries);
+    $("#homeCountryStatus").html(`<b>Country:</b> Mongolia, <b>Power:</b> ${power}, <b>Gold:</b> ${this.gold}, <b>Conquered:</b> ${conqueredCountries}/${totalCountries}`);
   }
 
   public updateMapColors(): void {
@@ -256,6 +250,26 @@ export class WorldMapRender {
   private startBattle(countryEntry: Country): void {
     // Battle logic implementation
     console.log("Starting battle with", countryEntry.country);
+    
+    // Initialize the battle world and castles
+    const selfPower = this.gold * 5; // Calculate player power based on gold
+    const enemyPower = countryEntry.armyPower.power;
+    
+    // Create the world and castles
+    battleScreenRender.createWorld(countryEntry.country, countryEntry.land);
+    battleScreenRender.createCastles(selfPower, enemyPower);
+    
+    // Create enemy units using the country's army formation
+    battleScreenRender.addEnemies(countryEntry.armyPower.shape, countryEntry.armyPower.level);
+    
+    // Set the country names for the health bars
+    battleScreenRender.setCountryNames("Mongolia", countryEntry.country);
+    
+    // Set the terrain information
+    battleScreenRender.setTerrainInfo(countryEntry.land);
+    
+    // Now render the battle
+    battleScreenRender.renderBattle();
   }
 
   public battleWon(): void {
@@ -271,7 +285,7 @@ export class WorldMapRender {
     }
 
     // Reset battle screen
-    // battleScreenRender.resetAfterBattle();
+    battleScreenRender.resetAfterBattle();
 
     const conqueredWorld = this.countryData.every((country) => country.isConquered);
     if (conqueredWorld) {
@@ -301,6 +315,7 @@ export class WorldMapRender {
   }
 
   public resetGame(): void {
+    battleScreenRender.resetGame();
     // Reset game
     for (let i = 0; i < this.countryData.length; i++) {
       if (this.countryData[i].country !== "Mongolia") {
@@ -314,18 +329,34 @@ export class WorldMapRender {
   }
 
   public gameLoop(timestamp: number): void {
-    // battleScreenRender.runMainLoop()
+    battleScreenRender.runMainLoop();
 
-    // const winChance = Math.random();
-    // if (battleScreenRender.isVictory) {
-    //   this.battleWon();
-    // } else if (battleScreenRender.isGameOver) {
-    //   this.battleLost();
-    // } else {
-    //   window.requestAnimationFrame(this.gameLoop.bind(this));
-    // }
+    const winChance = Math.random();
+    if (battleScreenRender.isVictory) {
+      this.battleWon();
+    } else if (battleScreenRender.isGameOver) {
+      this.battleLost();
+    } else {
+      window.requestAnimationFrame(this.gameLoop.bind(this));
+    }
   }
 
   // Additional methods can be added here as needed
 }
+
+// Event handlers for battle buttons
+$("#buttonFightBattle").click(function() {
+  battleScreenRender.initBattle();
+  self.gameLoop(0);
+});
+
+$("#buttonRetreatBattle").click(function() {
+  $("#battle-map").hide();
+  $("#world-map").show();
+
+  battleScreenRender.resetAfterBattle();
+
+  // Lose 10% of gold as a penalty
+  self.updateGold(Math.floor(self.gold * 0.9));
+});
 
