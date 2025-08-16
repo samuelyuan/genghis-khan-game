@@ -1,5 +1,11 @@
 class Castle {
-  constructor(hitPoints, xLine) {
+  public maxHitPoints: number;
+  public hitPoints: number;
+  public sType: string;
+  public xOffset: number;
+  public xLine: number;
+
+  constructor(hitPoints: number, xLine: number) {
     this.maxHitPoints = hitPoints;
     this.hitPoints = this.maxHitPoints;
     this.sType = "castle";
@@ -7,7 +13,7 @@ class Castle {
     this.xLine = xLine;
   }
 
-  loseHitPoints(power) {
+  public loseHitPoints(power: number): void {
     this.hitPoints = this.hitPoints - power;
     if (this.hitPoints < 0) {
       this.hitPoints = 0;
@@ -15,4 +21,4 @@ class Castle {
   }
 }
 
-export { Castle }
+export { Castle };

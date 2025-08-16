@@ -76,6 +76,12 @@ export interface Soldier {
   rivalCastle: any; // Will be refined later
   // Additional properties used in Soldier.js
   stAttackCastle: (position: number) => void;
+  loseHitPoints: (power: number) => void;
+  setState: (state: string) => void;
+  setExp: (exp: number) => void;
+  addExp: (exp: number) => void;
+  runFrame: (rivalUnits: Soldier[]) => void;
+  setFighting: (isBattleStarted: boolean) => void;
 }
 
 export interface Vector {
