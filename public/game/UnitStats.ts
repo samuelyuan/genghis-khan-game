@@ -5,11 +5,10 @@ export enum UnitType {
   Cavalry = 0,
   Pike = 1,
   Sword = 2,
-  Bow = 3,
-  Medic = 4
+  Bow = 3
 }
 
-export type UnitTypeName = "cavalry" | "pike" | "sword" | "bow" | "medic";
+export type UnitTypeName = "cavalry" | "pike" | "sword" | "bow";
 
 export type ValueType = "hitPoint" | "power" | "country";
 
@@ -33,14 +32,14 @@ class UnitStats {
   public readonly minRate: number = 0.05;
 
   // Unit costs and upgrade rates
-  public readonly unitCost: number[] = [60, 25, 20, 25, 20];
+  public readonly unitCost: number[] = [60, 25, 20, 25];
   public readonly unitCostUpgradeRate: number[] = [0.15, 0.18, 0.18, 0.2];
 
   // Unit type definitions
-  public readonly roleTypes: UnitTypeName[] = ["cavalry", "pike", "sword", "bow", "medic"];
-  public readonly hitPoints: number[] = [300, 200, 200, 100, 100];
+  public readonly roleTypes: UnitTypeName[] = ["cavalry", "pike", "sword", "bow"];
+  public readonly hitPoints: number[] = [300, 200, 200, 100];
   public readonly hpUpgradeRates: number[] = [0.1, 0.15, 0.1, 0.15];
-  public readonly power: number[] = [20, 12, 8, 10, 10];
+  public readonly power: number[] = [20, 12, 8, 10];
   public readonly powerUpRate: number[] = [0.15, 0.15, 0.15, 0.2];
 
   // Land rate modifiers for hit points

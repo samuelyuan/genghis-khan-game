@@ -321,9 +321,35 @@ class BattleScreenRender {
     this.ctx.font = "16px Arial";
     this.ctx.fillStyle = "#000000";
     this.ctx.strokeRect(xStart, yStart, this.tileWidth, this.tileWidth);
-    // Text to identify unit type
+    
+    // Unit type abbreviation in center with background circle for better visibility
+    const unitTypeNames = ["C", "P", "S", "B"]; // Cavalry, Pike, Sword, Bow
+    const unitTypeColors = ["#8B4513", "#228B22", "#4169E1", "#8B008B"]; // Brown, Green, Blue, Dark Magenta
+    
+    // Draw background circle for unit type
+    this.ctx.fillStyle = unitTypeColors[soldier.typeId];
+    this.ctx.beginPath();
+    this.ctx.arc(xStart + this.tileWidth / 2, yStart + this.tileWidth / 2, 8, 0, 2 * Math.PI);
+    this.ctx.fill();
+    this.ctx.strokeStyle = "#000000";
+    this.ctx.lineWidth = 1;
+    this.ctx.stroke();
+    
+    // Unit type letter in center
+    this.ctx.font = "bold 12px Arial";
     this.ctx.fillStyle = "#FFFFFF";
-    this.ctx.fillText(soldier.currentLevel.toString(), xStart + 8, yStart + 20);
+    this.ctx.textAlign = "center";
+    this.ctx.fillText(unitTypeNames[soldier.typeId], xStart + this.tileWidth / 2, yStart + this.tileWidth / 2 + 4);
+    
+    // Level in top left corner
+    this.ctx.font = "bold 11px Arial";
+    this.ctx.fillStyle = "#FFFFFF";
+    this.ctx.textAlign = "left";
+    this.ctx.fillText(soldier.currentLevel.toString(), xStart + 4, yStart + 13);
+    
+    // Reset text alignment and line width
+    this.ctx.textAlign = "left";
+    this.ctx.lineWidth = 1;
   }
 
   public createCastles(selfPower: number, enemyPower: number): void {
