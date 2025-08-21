@@ -29,6 +29,43 @@ canvas[0].addEventListener('mousedown', function(e) {
   battleScreenRender.placeNewPlayerUnit(canvas[0] as HTMLCanvasElement, e);
 });
 
+// Unit stats modal event handlers
+$("#upgradeUnit").on("click", function() {
+  const selectedUnit = $("#unitStatsModal").data("selectedUnit");
+  if (selectedUnit) {
+    battleScreenRender.upgradeUnit(selectedUnit);
+  }
+});
+
+$("#sellUnit").on("click", function() {
+  const selectedUnit = $("#unitStatsModal").data("selectedUnit");
+  if (selectedUnit) {
+    const sellValue = battleScreenRender.sellUnit(selectedUnit);
+    // Update gold
+    self.updateGold(self.gold + sellValue);
+    $("#unitStatsModal").modal("hide");
+  }
+});
+
+// Keyboard shortcuts for unit actions
+$(document).on("keydown", function(e) {
+  // Only handle shortcuts when unit modal is open
+  if ($("#unitStatsModal").hasClass("show")) {
+    if (e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      $("#sellUnit").click();
+    } else if (e.key.toLowerCase() === 'u') {
+      e.preventDefault();
+      $("#upgradeUnit").click();
+    }
+  }
+});
+
+// Clear selection when modal is closed
+$("#unitStatsModal").on("hidden.bs.modal", function() {
+  battleScreenRender.renderPlayerSoldiers();
+});
+
 let selectedCountryEntry: Country | null = null;
 let self: WorldMapRender;
 const interest = 0.1;

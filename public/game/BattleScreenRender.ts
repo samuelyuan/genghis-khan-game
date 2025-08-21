@@ -183,6 +183,140 @@ class BattleScreenRender {
     return gridX + "," + gridY;
   }
 
+  public findUnitAtPosition(x: number, y: number): ISoldier | null {
+    for (let i = 0; i < this.playerUnits.length; i++) {
+      const unit = this.playerUnits[i];
+      const unitGridX = Math.floor((unit.xPos - this.worldX) / this.tileWidth);
+      const unitGridY = Math.floor((unit.yPos - this.worldY) / this.tileWidth);
+      
+      if (unitGridX === x && unitGridY === y) {
+        return unit;
+      }
+    }
+    return null;
+  }
+
+  public getUnitStats(unit: ISoldier): any {
+    const unitTypeNames = ["Cavalry", "Pike", "Sword", "Bow"];
+    const unitTypeAbbr = ["C", "P", "S", "B"];
+    
+    return {
+      cost: this.unitStats.unitCost[unit.typeId],
+      type: unitTypeNames[unit.typeId],
+      typeAbbr: unitTypeAbbr[unit.typeId],
+      level: unit.currentLevel,
+      power: unit.power,
+      hp: unit.hitPoints,
+      maxHp: unit.maxHitPoints,
+      exp: unit.experience,
+      expPerLevel: unit.expUnit
+    };
+  }
+
+  public getUpgradePreview(unit: ISoldier): any {
+    const nextLevel = unit.currentLevel + 1;
+
+    const baseCost = this.unitStats.unitCost[unit.typeId];
+    const upgradeRate = this.unitStats.unitCostUpgradeRate[unit.typeId];
+    const upgradeCost = Math.floor(baseCost * upgradeRate);
+    
+    // Calculate next level stats using UnitStats methods
+    const nextLevelMaxHp = this.unitStats.getMaxHitPoints(nextLevel, unit.typeId, this.landType!);
+    const nextLevelPower = this.unitStats.getUnitPower(nextLevel, unit.typeId, this.landType!);
+    
+    // Calculate experience required for next level (total experience, not just the increment)
+    const nextLevelExp = unit.experience + unit.expUnit;
+    
+    return {
+      cost: upgradeCost,
+      level: nextLevel,
+      power: nextLevelPower,
+      hp: nextLevelMaxHp,
+      exp: nextLevelExp
+    };
+  }
+
+  public sellUnit(unit: ISoldier): number {
+    const sellValue = Math.floor(this.unitStats.unitCost[unit.typeId] * 0.75);
+    
+    // Remove unit from occupied squares
+    const unitGridX = Math.floor((unit.xPos - this.worldX) / this.tileWidth);
+    const unitGridY = Math.floor((unit.yPos - this.worldY) / this.tileWidth);
+    const key = this.getGridKey(unitGridX, unitGridY);
+    
+    const index = this.occupiedPlayerSquares.indexOf(key);
+    if (index > -1) {
+      this.occupiedPlayerSquares.splice(index, 1);
+    }
+    
+    // Remove unit from player units
+    const unitIndex = this.playerUnits.indexOf(unit);
+    if (unitIndex > -1) {
+      this.playerUnits.splice(unitIndex, 1);
+    }
+    
+    // Clear the specific area where the unit was and redraw everything
+    this.renderBattle();
+    
+    return sellValue;
+  }
+
+  public showUnitStatsModal(unit: ISoldier): void {
+    // Always get fresh stats when showing the modal
+    this.updateModalWithUnitStats(unit);
+    
+    // Store reference to current unit for button actions
+    ($ as any)("#unitStatsModal").data("selectedUnit", unit);
+    
+    // Show the modal
+    ($ as any)("#unitStatsModal").modal("show");
+  }
+
+  public upgradeUnit(unit: ISoldier): void {
+    // Increase level by 1
+    unit.addExp(unit.expUnit);
+    
+    // Get the new level stats and actually apply them to the unit
+    const nextLevel = unit.currentLevel;
+    const newMaxHp = this.unitStats.getMaxHitPoints(nextLevel, unit.typeId, this.landType!);
+    const newPower = this.unitStats.getUnitPower(nextLevel, unit.typeId, this.landType!);
+    
+    // Update the unit's actual stats
+    unit.maxHitPoints = newMaxHp;
+    unit.hitPoints = newMaxHp; // Heal to full when upgrading
+    unit.power = newPower;
+
+    // Update the modal with new stats
+    this.updateModalWithUnitStats(unit);
+    
+    // Re-render to show updated state
+    this.renderPlayerSoldiers();
+  }
+
+  private updateModalWithUnitStats(unit: ISoldier): void {
+    const stats = this.getUnitStats(unit);
+    const upgradePreview = this.getUpgradePreview(unit);
+    
+    // Update modal with current unit stats
+    ($ as any)("#unitCost").text(stats.cost);
+    ($ as any)("#unitType").text(stats.type);
+    ($ as any)("#unitLevel").text(stats.level);
+    ($ as any)("#unitPower").text(stats.power);
+    ($ as any)("#unitHP").text(stats.hp);
+    ($ as any)("#unitExp").text(stats.exp);
+    
+    // Update upgrade preview
+    ($ as any)("#upgradeCost").text(upgradePreview.cost);
+    ($ as any)("#upgradeLevel").text(upgradePreview.level);
+    ($ as any)("#upgradePower").text(upgradePreview.power);
+    ($ as any)("#upgradeHP").text(upgradePreview.hp);
+    ($ as any)("#upgradeExp").text(upgradePreview.exp);
+  }
+
+  public canAffordUpgrade(upgradeCost: number, playerGold: number): boolean {
+    return playerGold >= upgradeCost;
+  }
+
   public drawWorld(): void {
     const SCREEN_WIDTH = 800;
     this.ctx.fillStyle = "#657051";
@@ -227,22 +361,17 @@ class BattleScreenRender {
     const gridX: number = Math.floor((mouseX - this.worldX) / this.tileWidth);
     const gridY: number = Math.floor((mouseY - this.worldY) / this.tileWidth);
 
+    // Check if there's a unit at this position first
+    const existingUnit = this.findUnitAtPosition(gridX, gridY);
+    if (existingUnit) {
+      // Show unit stats modal instead of upgrading directly
+      this.showUnitStatsModal(existingUnit);
+      return;
+    }
+
     const key: string = this.getGridKey(gridX, gridY);
     if (this.occupiedPlayerSquares.includes(key)) {
-      // Upgrade the existing unit
-      for (let i = 0; i < this.playerUnits.length; i++) {
-        const tileObj: TileObject = {
-          centerX: (gridX * this.tileWidth) + this.worldX,
-          centerY: (gridY * this.tileWidth) + this.worldY
-        };
-        if (this.playerUnits[i].xPos === tileObj.centerX
-          && this.playerUnits[i].yPos === tileObj.centerY) {
-          // Increase level by 1
-          this.playerUnits[i].addExp(this.playerUnits[i].experiencePerLevel);
-          break;
-        }
-      }
-      this.renderPlayerSoldiers();
+      // This shouldn't happen now since we check for units first, but keeping as fallback
       return;
     }
     
@@ -317,9 +446,10 @@ class BattleScreenRender {
     // Colored rectangle
     this.ctx.fillStyle = color;
     this.ctx.fillRect(xStart, yStart, this.tileWidth * (soldier.hitPoints / soldier.maxHitPoints), this.tileWidth);
-    // Outline
-    this.ctx.font = "16px Arial";
-    this.ctx.fillStyle = "#000000";
+    
+    // Outline - simple black border for all units
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle = "#000000";
     this.ctx.strokeRect(xStart, yStart, this.tileWidth, this.tileWidth);
     
     // Unit type abbreviation in center with background circle for better visibility

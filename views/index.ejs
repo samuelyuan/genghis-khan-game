@@ -8,6 +8,57 @@
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
   <link rel="stylesheet" href="/css/jquery-jvectormap-2.0.5.css" type="text/css" media="screen"/>
+  <style>
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-family: monospace;
+    }
+    
+    .stat-label {
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .stat-value {
+      color: #666;
+    }
+    
+    .sell-option, .upgrade-action {
+      text-align: center;
+      margin: 15px 0;
+      font-size: 0.9em;
+      color: #666;
+    }
+    
+    .action-hint {
+      font-style: italic;
+    }
+    
+    .upgrade-preview {
+      margin-top: 15px;
+    }
+    
+    .upgrade-preview .stat-value {
+      color: #28a745;
+    }
+    
+    #unitStatsModal .modal-body {
+      background-color: #f8f9fa;
+      padding: 20px;
+    }
+    
+    #unitStatsModal .modal-header {
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    
+    #unitStatsModal .modal-title {
+      color: #333 !important;
+      font-weight: bold;
+    }
+  </style>
   <script src="/js/jquery-3.5.1.min.js"></script>
   <script src="/js/jquery-jvectormap-2.0.5.min.js"></script>
   <script src="/js/popper.min.js"></script>
@@ -178,6 +229,90 @@
         <div class="modal-body"></div>
         <div class="modal-footer">
           <button type="button" class="btn btn-success" data-dismiss="modal" id="newGame">New Game</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unit Stats Modal -->
+  <div class="modal fade" id="unitStatsModal" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Your Unit</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Current Stats -->
+          <div class="current-stats">
+            <div class="stat-row">
+              <span class="stat-label">COST:</span>
+              <span class="stat-value" id="unitCost"></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">TYPE:</span>
+              <span class="stat-value" id="unitType"></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">LEVEL:</span>
+              <span class="stat-value" id="unitLevel"></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">POWER:</span>
+              <span class="stat-value" id="unitPower"></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">HP:</span>
+              <span class="stat-value" id="unitHP"></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">EXP:</span>
+              <span class="stat-value" id="unitExp"></span>
+            </div>
+          </div>
+
+          <!-- Sell Option -->
+          <div class="sell-option">
+            <span class="action-hint">Sell for 75% of original cost</span>
+          </div>
+
+          <hr style="border-top: 1px dashed #ccc;">
+
+          <!-- Upgrade Preview -->
+          <div class="upgrade-preview">
+            <div class="stat-row">
+              <span class="stat-label">COST:</span>
+              <span class="stat-value" id="upgradeCost"></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">LEVEL:</span>
+              <span class="stat-value" id="upgradeLevel"></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">POWER:</span>
+              <span class="stat-value" id="upgradePower"></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">HP:</span>
+              <span class="stat-value" id="upgradeHP"></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">EXP:</span>
+              <span class="stat-value" id="upgradeExp"></span>
+            </div>
+          </div>
+
+          <!-- Upgrade Action -->
+          <div class="upgrade-action">
+            <span class="action-hint">Upgrade to next level</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-warning" id="sellUnit">Sell Unit (S)</button>
+          <button type="button" class="btn btn-primary" id="upgradeUnit">Upgrade Unit (U)</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
