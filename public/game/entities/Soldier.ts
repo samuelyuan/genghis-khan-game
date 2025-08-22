@@ -1,6 +1,6 @@
 import { Castle } from './Castle.js';
-import { Vector } from './Vector.js';
-import { Soldier as ISoldier } from './types.js';
+import { Vector } from '../utils/Vector.js';
+import { Soldier as ISoldier } from '../types/types.js';
 
 // Extended interface for the constructor data
 interface SoldierConstructorData {

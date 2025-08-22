@@ -1,5 +1,5 @@
 import { Soldier } from './Soldier.js';
-import { Vector } from './Vector.js';
+import { Vector } from '../utils/Vector.js';
 import { Castle } from './Castle.js';
 
 import { SoldierConstructorData } from './Soldier.js';

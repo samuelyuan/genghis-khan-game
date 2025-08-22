@@ -1,8 +1,8 @@
-import { Enemy } from './Enemy.js';
-import { Player } from './Player.js';
-import { TerrainType } from './types.js';
+import { Enemy } from '../entities/Enemy.js';
+import { Player } from '../entities/Player.js';
+import { TerrainType } from '../types/types.js';
 import { UnitStats } from './UnitStats.js';
-import { Castle } from './Castle.js';
+import { Castle } from '../entities/Castle.js';
 
 // Define interfaces for the data structures used
 interface Tile {
@@ -79,4 +79,3 @@ class SoldierFactory {
 }
 
 export { SoldierFactory };
-export type { Tile, MapData, UnitData, UnitFamily };

@@ -1,4 +1,4 @@
-import { FormationUnit } from './types.js';
+import { FormationUnit } from '../types/types.js';
 
 // Type for army formation data structure
 type ArmyFormationsData = {

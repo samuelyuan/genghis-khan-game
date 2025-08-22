@@ -1,7 +1,7 @@
-import { Castle } from './Castle.js';
-import { SoldierFactory } from './SoldierFactory.js';
-import { UnitStats } from './UnitStats.js';
-import { TerrainType, FormationUnit, Soldier as ISoldier } from './types.js';
+import { Castle } from '../entities/Castle.js';
+import { SoldierFactory } from '../systems/SoldierFactory.js';
+import { UnitStats } from '../systems/UnitStats.js';
+import { TerrainType, FormationUnit, Soldier as ISoldier } from '../types/types.js';
 
 // Interface for tile objects
 interface Tile {

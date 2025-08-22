@@ -1,6 +1,6 @@
 import { BattleScreenRender } from './BattleScreenRender.js';
-import { MapCountries } from './MapCountries.js';
-import { Country } from './types.js';
+import { MapCountries } from '../core/MapCountries.js';
+import { Country } from '../types/types.js';
 
 // Declare jvm namespace for the map library
 declare namespace jvm {

@@ -1,4 +1,4 @@
-import { WorldMapRender } from './WorldMapRender.js';
+import { WorldMapRender } from '../rendering/WorldMapRender.js';
 import { MapCountries } from './MapCountries.js';
 
 // jQuery ready function with proper typing

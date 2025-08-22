@@ -1,4 +1,4 @@
-import { TerrainType } from './types.js';
+import { TerrainType } from '../types/types.js';
 
 // Unit type constants
 export enum UnitType {
