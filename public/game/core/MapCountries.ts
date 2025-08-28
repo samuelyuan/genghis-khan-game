@@ -466,13 +466,22 @@ export class MapCountries {
       }
     ];
 
-    return countryData.map(country => ({
-      isConquered: country.isConquered,
-      armyPower: this.getPower(country.typeId, this.getRandomNum(country.levelRange[0], country.levelRange[1])),
-      land: country.terrain,
-      country: country.name,
-      neighbor: country.neighbors
-    }));
+    return countryData.map(country => {
+      const levelRange0 = country.levelRange[0];
+      const levelRange1 = country.levelRange[1];
+      
+      if (levelRange0 === undefined || levelRange1 === undefined) {
+        throw new Error(`Invalid level range for country: ${country.name}`);
+      }
+      
+      return {
+        isConquered: country.isConquered,
+        armyPower: this.getPower(country.typeId, this.getRandomNum(levelRange0, levelRange1)),
+        land: country.terrain,
+        country: country.name,
+        neighbor: country.neighbors
+      };
+    });
   }
 
   public getPower(typeId: number, level: number): ArmyPower {

@@ -27,6 +27,9 @@ export enum TerrainType {
   Grassland = "Grassland"
 }
 
+// Unit States
+export type UnitState = "stand" | "walk" | "attack";
+
 // Unit Types
 export interface UnitData {
   xPos: number;
@@ -59,7 +62,7 @@ export interface Soldier {
   maxHitPoints: number;
   hitPoints: number;
   isDead: boolean;
-  sState: string;
+  sState: UnitState;
   F: Vector;
   standDist: number;
   hitDist: number;
@@ -67,17 +70,17 @@ export interface Soldier {
   topBorder: number;
   bottomBorder: number;
   // Additional properties found by TypeScript
-  unitBeingAttackedBy: any | null;
+  unitBeingAttackedBy: Soldier | null;
   rivalCastleXLine: number;
   initv: Vector;
   v: Vector;
   sFamily: string; // "player" or "enemy"
-  aim: any; // Will be refined later
-  rivalCastle: any; // Will be refined later
+  aim: Soldier | any; // Can be either a Soldier or Castle (imported from Castle.ts)
+  rivalCastle: any; // Castle type imported from Castle.ts
   // Additional properties used in Soldier.js
   stAttackCastle: (position: number) => void;
   loseHitPoints: (power: number) => void;
-  setState: (state: string) => void;
+  setState: (state: UnitState) => void;
   setExp: (exp: number) => void;
   addExp: (exp: number) => void;
   runFrame: (rivalUnits: Soldier[]) => void;

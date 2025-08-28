@@ -2,6 +2,9 @@ import { Castle } from '../entities/Castle.js';
 import { SoldierFactory } from '../systems/SoldierFactory.js';
 import { UnitStats } from '../systems/UnitStats.js';
 import { TerrainType, FormationUnit, Soldier as ISoldier } from '../types/types.js';
+import { BattleRenderer } from './BattleRenderer.js';
+import { UnitManager } from '../systems/UnitManager.js';
+import { BATTLE_CONSTANTS } from '../constants/GameConstants.js';
 
 // Interface for tile objects
 interface Tile {
@@ -37,15 +40,8 @@ class BattleScreenRender {
   // Canvas context
   private ctx: CanvasRenderingContext2D;
 
-  // Player tiles
-  private readonly tileWidth: number = 32;
-  private readonly tileRow: number = 9;
-  private readonly tileColumn: number = 9;
-
   // World constants
-  private readonly worldX: number = 110;
-  private readonly worldY: number = 108;
-  private readonly mapWidth: number = 800;
+  private readonly mapWidth: number = BATTLE_CONSTANTS.MAP_WIDTH;
   private readonly enemyCoordOffset: number;
   private speedTimes: number = 1; // Default is 1, max is 4
 
@@ -73,10 +69,12 @@ class BattleScreenRender {
   // Game systems
   private unitStats: UnitStats;
   private soldierFactory: SoldierFactory;
+  private battleRenderer: BattleRenderer;
+  private unitManager: UnitManager;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
-    this.enemyCoordOffset = this.mapWidth - (this.worldX * 2) - (this.tileWidth * this.tileRow);
+    this.enemyCoordOffset = this.mapWidth - (BATTLE_CONSTANTS.WORLD_X * 2) - (BATTLE_CONSTANTS.TILE_WIDTH * BATTLE_CONSTANTS.TILE_ROW);
 
     this.resetGame();
 
@@ -84,7 +82,9 @@ class BattleScreenRender {
     this.loadAllImages();
 
     this.unitStats = new UnitStats();
-    this.soldierFactory = new SoldierFactory(this.unitStats, this.worldY, this.tileRow);
+    this.soldierFactory = new SoldierFactory(this.unitStats, BATTLE_CONSTANTS.WORLD_Y, BATTLE_CONSTANTS.TILE_ROW);
+    this.battleRenderer = new BattleRenderer(ctx);
+    this.unitManager = new UnitManager(this.unitStats, this.soldierFactory, this.landType, this.playerCastle, this.enemyCastle);
   }
 
   private loadAllImages(): void {
@@ -123,15 +123,17 @@ class BattleScreenRender {
 
   public createWorld(countryName: string, landType: TerrainType): void {
     this.landType = landType;
+    this.unitManager.updateLandType(landType);
+    
     // Reset at beginning of each battle
     this.playerTiles = [];
     
-    for (let r = 0; r < this.tileRow; r++) {
-      for (let c = 0; c < this.tileColumn; c++) {
-        const posX: number = this.tileWidth * c + this.worldX;
-        const posY: number = this.tileWidth * r + this.worldY;
-        const centerX: number = posX + this.tileWidth / 2;
-        const centerY: number = posY + this.tileWidth / 2;
+    for (let r = 0; r < BATTLE_CONSTANTS.TILE_ROW; r++) {
+      for (let c = 0; c < BATTLE_CONSTANTS.TILE_COLUMN; c++) {
+        const posX: number = BATTLE_CONSTANTS.TILE_WIDTH * c + BATTLE_CONSTANTS.WORLD_X;
+        const posY: number = BATTLE_CONSTANTS.TILE_WIDTH * r + BATTLE_CONSTANTS.WORLD_Y;
+        const centerX: number = posX + BATTLE_CONSTANTS.TILE_WIDTH / 2;
+        const centerY: number = posY + BATTLE_CONSTANTS.TILE_WIDTH / 2;
         
         const tileObj: Tile = {
           x: posX,
@@ -149,6 +151,9 @@ class BattleScreenRender {
     // Reset position of player units
     if (this.playerUnits.length > 0 && this.occupiedPlayerSquares.length === 0) {
       for (let i = 0; i < this.playerUnits.length; i++) {
+        const unit = this.playerUnits[i];
+        if (!unit) continue;
+        
         const nextGridLocation: GridLocation | null = this.findNextEmptyGridLocation();
         // This shouldn't be possible because you can't place more units on the board
         // than there are squares
@@ -156,109 +161,43 @@ class BattleScreenRender {
           break;
         }
 
-        this.playerUnits[i].xPos = (nextGridLocation.gridX * this.tileWidth) + this.worldX;
-        this.playerUnits[i].yPos = (nextGridLocation.gridY * this.tileWidth) + this.worldY;
-        const gridKey: string = this.getGridKey(nextGridLocation.gridX, nextGridLocation.gridY);
+        unit.xPos = (nextGridLocation.gridX * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_X;
+        unit.yPos = (nextGridLocation.gridY * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_Y;
+        const gridKey: string = nextGridLocation.gridX + "," + nextGridLocation.gridY;
         this.occupiedPlayerSquares.push(gridKey);
       }
     }
   }
 
   private findNextEmptyGridLocation(): GridLocation | null {
-    for (let gridX = this.tileColumn - 1; gridX >= 0; gridX--) {
-      for (let gridY = 0; gridY < this.tileRow; gridY++) {
-        const key: string = this.getGridKey(gridX, gridY);
-        if (!this.occupiedPlayerSquares.includes(key)) {
-          return {
-            gridX: gridX,
-            gridY: gridY
-          };
-        }
-      }
-    }
-    return null;
+    return this.unitManager.findNextEmptyGridLocation(this.occupiedPlayerSquares);
   }
 
-  private getGridKey(gridX: number, gridY: number): string {
-    return gridX + "," + gridY;
-  }
+
 
   public findUnitAtPosition(x: number, y: number): ISoldier | null {
-    for (let i = 0; i < this.playerUnits.length; i++) {
-      const unit = this.playerUnits[i];
-      const unitGridX = Math.floor((unit.xPos - this.worldX) / this.tileWidth);
-      const unitGridY = Math.floor((unit.yPos - this.worldY) / this.tileWidth);
-      
-      if (unitGridX === x && unitGridY === y) {
-        return unit;
-      }
-    }
-    return null;
+    return this.unitManager.findUnitAtPosition(x, y, this.playerUnits);
   }
 
   public getUnitStats(unit: ISoldier): any {
-    const unitTypeNames = ["Cavalry", "Pike", "Sword", "Bow"];
-    const unitTypeAbbr = ["C", "P", "S", "B"];
-    
-    return {
-      cost: this.unitStats.unitCost[unit.typeId],
-      type: unitTypeNames[unit.typeId],
-      typeAbbr: unitTypeAbbr[unit.typeId],
-      level: unit.currentLevel,
-      power: unit.power,
-      hp: unit.hitPoints,
-      maxHp: unit.maxHitPoints,
-      exp: unit.experience,
-      expPerLevel: unit.expUnit
-    };
+    return this.unitManager.getUnitStats(unit);
   }
 
   public getUpgradePreview(unit: ISoldier): any {
-    const nextLevel = unit.currentLevel + 1;
-
-    const baseCost = this.unitStats.unitCost[unit.typeId];
-    const upgradeRate = this.unitStats.unitCostUpgradeRate[unit.typeId];
-    const upgradeCost = Math.floor(baseCost * upgradeRate);
-    
-    // Calculate next level stats using UnitStats methods
-    const nextLevelMaxHp = this.unitStats.getMaxHitPoints(nextLevel, unit.typeId, this.landType!);
-    const nextLevelPower = this.unitStats.getUnitPower(nextLevel, unit.typeId, this.landType!);
-    
-    // Calculate experience required for next level (total experience, not just the increment)
-    const nextLevelExp = unit.experience + unit.expUnit;
-    
-    return {
-      cost: upgradeCost,
-      level: nextLevel,
-      power: nextLevelPower,
-      hp: nextLevelMaxHp,
-      exp: nextLevelExp
-    };
+    return this.unitManager.getUpgradePreview(unit);
   }
 
   public sellUnit(unit: ISoldier): number {
-    const sellValue = Math.floor(this.unitStats.unitCost[unit.typeId] * 0.75);
+    const result = this.unitManager.sellUnit(unit, this.playerUnits, this.occupiedPlayerSquares);
     
-    // Remove unit from occupied squares
-    const unitGridX = Math.floor((unit.xPos - this.worldX) / this.tileWidth);
-    const unitGridY = Math.floor((unit.yPos - this.worldY) / this.tileWidth);
-    const key = this.getGridKey(unitGridX, unitGridY);
-    
-    const index = this.occupiedPlayerSquares.indexOf(key);
-    if (index > -1) {
-      this.occupiedPlayerSquares.splice(index, 1);
-    }
-    
-    // Remove unit from player units
-    const unitIndex = this.playerUnits.indexOf(unit);
-    if (unitIndex > -1) {
-      this.playerUnits.splice(unitIndex, 1);
-    }
+    // Update the arrays with the results
+    this.playerUnits = result.updatedPlayerUnits;
+    this.occupiedPlayerSquares = result.updatedOccupiedSquares;
     
     // Clear the specific area where the unit was and redraw everything
     this.renderBattle();
     
-    return sellValue;
+    return result.sellValue;
   }
 
   public showUnitStatsModal(unit: ISoldier): void {
@@ -273,24 +212,13 @@ class BattleScreenRender {
   }
 
   public upgradeUnit(unit: ISoldier): void {
-    // Increase level by 1
-    unit.addExp(unit.expUnit);
-    
-    // Get the new level stats and actually apply them to the unit
-    const nextLevel = unit.currentLevel;
-    const newMaxHp = this.unitStats.getMaxHitPoints(nextLevel, unit.typeId, this.landType!);
-    const newPower = this.unitStats.getUnitPower(nextLevel, unit.typeId, this.landType!);
-    
-    // Update the unit's actual stats
-    unit.maxHitPoints = newMaxHp;
-    unit.hitPoints = newMaxHp; // Heal to full when upgrading
-    unit.power = newPower;
+    this.unitManager.upgradeUnit(unit);
 
     // Update the modal with new stats
     this.updateModalWithUnitStats(unit);
     
     // Re-render to show updated state
-    this.renderPlayerSoldiers();
+    this.battleRenderer.renderPlayerSoldiers(this.playerUnits);
   }
 
   private updateModalWithUnitStats(unit: ISoldier): void {
@@ -314,91 +242,27 @@ class BattleScreenRender {
   }
 
   public canAffordUpgrade(upgradeCost: number, playerGold: number): boolean {
-    return playerGold >= upgradeCost;
-  }
-
-  public drawWorld(): void {
-    const SCREEN_WIDTH = 800;
-    this.ctx.fillStyle = "#657051";
-
-    this.ctx.drawImage(this.imageArr[0], 0, 104);
-    this.ctx.drawImage(this.imageArr[1], 100, 104, 530, 297);
-    this.ctx.drawImage(this.imageArr[2], 630, 104);
-
-    // top border
-    this.ctx.fillRect(0, 0, SCREEN_WIDTH, this.worldY);
-    // bottom border
-    this.ctx.fillRect(0, this.worldY + (this.tileRow * this.tileWidth), SCREEN_WIDTH, 600);
-
-    // Health bar region
-    this.ctx.fillStyle = "#000000";
-    this.ctx.fillRect(6, 406, 415-6, 424-406);
-
-    this.ctx.beginPath();
-    this.ctx.rect(0, 0, SCREEN_WIDTH, 600);
-    this.ctx.stroke();
-  }
-
-  public drawStagingArea(): void {
-    for (let i = 0; i < this.playerTiles.length; i++) {
-      const tileObj: Tile = this.playerTiles[i];
-      // Display grid for player to place units
-      this.ctx.fillStyle = "#6E9E0D";
-      this.ctx.fillRect(tileObj.x, tileObj.y, this.tileWidth-2, this.tileWidth-2);
-    }
+    return this.unitManager.canAffordUpgrade(upgradeCost, playerGold);
   }
 
   public placeNewPlayerUnit(canvas: HTMLCanvasElement, event: MouseEvent): void {
-    // Don't let player place new units during a battle
-    if (this.isBattleStarted) {
-      return;
-    }
+    const result = this.unitManager.placeNewPlayerUnit(
+      canvas, 
+      event, 
+      this.isBattleStarted, 
+      this.playerUnits, 
+      this.occupiedPlayerSquares
+    );
 
-    const rect: DOMRect = canvas.getBoundingClientRect();
-    const mouseX: number = event.clientX - rect.left;
-    const mouseY: number = event.clientY - rect.top;
-
-    const gridX: number = Math.floor((mouseX - this.worldX) / this.tileWidth);
-    const gridY: number = Math.floor((mouseY - this.worldY) / this.tileWidth);
-
-    // Check if there's a unit at this position first
-    const existingUnit = this.findUnitAtPosition(gridX, gridY);
-    if (existingUnit) {
-      // Show unit stats modal instead of upgrading directly
-      this.showUnitStatsModal(existingUnit);
-      return;
+    if (result.unit && result.gridKey) {
+      // New unit was placed
+      this.playerUnits.push(result.unit);
+      this.occupiedPlayerSquares.push(result.gridKey);
+      this.battleRenderer.renderPlayerSoldiers(this.playerUnits);
+    } else if (result.unit && !result.gridKey) {
+      // Existing unit was clicked - show stats modal
+      this.showUnitStatsModal(result.unit);
     }
-
-    const key: string = this.getGridKey(gridX, gridY);
-    if (this.occupiedPlayerSquares.includes(key)) {
-      // This shouldn't happen now since we check for units first, but keeping as fallback
-      return;
-    }
-    
-    if (gridX < 0 || gridX >= this.tileColumn) {
-      return;
-    }
-    if (gridY < 0 || gridY >= this.tileRow) {
-      return;
-    }
-
-    const tileObj: TileObject = {
-      centerX: (gridX * this.tileWidth) + this.worldX,
-      centerY: (gridY * this.tileWidth) + this.worldY
-    };
-    
-    const typeId: number = 1;
-    const playerLevel: number = 0;
-    const mapData: MapData = {
-      landType: this.landType!,
-      playerCastle: this.playerCastle!,
-      enemyCastle: this.enemyCastle!
-    };
-    
-    const playerUnit: ISoldier = this.soldierFactory.createPlayerUnit(tileObj, typeId, playerLevel, mapData);
-    this.playerUnits.push(playerUnit);
-    this.occupiedPlayerSquares.push(key);
-    this.renderPlayerSoldiers();
   }
 
   public addEnemies(enemyShape: FormationUnit[], enemyLevel: number[]): void {
@@ -424,77 +288,10 @@ class BattleScreenRender {
     }
   }
 
-  public renderPlayerSoldiers(): void {
-    for (let i = 0; i < this.playerUnits.length; i++) {
-      const soldier: ISoldier = this.playerUnits[i];
-      const xStart: number = soldier.xPos;
-      const yStart: number = soldier.yPos;
-      this.renderSoldier(soldier, xStart, yStart, "#FF5100");
-    }
-  }
-
-  public renderEnemySoldiers(): void {
-    for (let i = 0; i < this.enemyUnits.length; i++) {
-      const soldier: ISoldier = this.enemyUnits[i];
-      const xStart: number = soldier.xPos - this.tileWidth / 2;
-      const yStart: number = soldier.yPos - this.tileWidth / 2;
-      this.renderSoldier(soldier, xStart, yStart, "#0051FF");
-    }
-  }
-
-  private renderSoldier(soldier: ISoldier, xStart: number, yStart: number, color: string): void {
-    // Colored rectangle
-    this.ctx.fillStyle = color;
-    this.ctx.fillRect(xStart, yStart, this.tileWidth * (soldier.hitPoints / soldier.maxHitPoints), this.tileWidth);
-    
-    // Outline - simple black border for all units
-    this.ctx.lineWidth = 1;
-    this.ctx.strokeStyle = "#000000";
-    this.ctx.strokeRect(xStart, yStart, this.tileWidth, this.tileWidth);
-    
-    // Unit type abbreviation in center with background circle for better visibility
-    const unitTypeNames = ["C", "P", "S", "B"]; // Cavalry, Pike, Sword, Bow
-    const unitTypeColors = ["#8B4513", "#228B22", "#4169E1", "#8B008B"]; // Brown, Green, Blue, Dark Magenta
-    
-    // Draw background circle for unit type
-    this.ctx.fillStyle = unitTypeColors[soldier.typeId];
-    this.ctx.beginPath();
-    this.ctx.arc(xStart + this.tileWidth / 2, yStart + this.tileWidth / 2, 8, 0, 2 * Math.PI);
-    this.ctx.fill();
-    this.ctx.strokeStyle = "#000000";
-    this.ctx.lineWidth = 1;
-    this.ctx.stroke();
-    
-    // Unit type letter in center
-    this.ctx.font = "bold 12px Arial";
-    this.ctx.fillStyle = "#FFFFFF";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(unitTypeNames[soldier.typeId], xStart + this.tileWidth / 2, yStart + this.tileWidth / 2 + 4);
-    
-    // Level in top left corner
-    this.ctx.font = "bold 11px Arial";
-    this.ctx.fillStyle = "#FFFFFF";
-    this.ctx.textAlign = "left";
-    this.ctx.fillText(soldier.currentLevel.toString(), xStart + 4, yStart + 13);
-    
-    // Reset text alignment and line width
-    this.ctx.textAlign = "left";
-    this.ctx.lineWidth = 1;
-  }
-
   public createCastles(selfPower: number, enemyPower: number): void {
-    this.playerCastle = new Castle(selfPower, this.worldX);
-    this.enemyCastle = new Castle(enemyPower, this.mapWidth - this.worldX);
-  }
-
-  public drawCastleHealth(): void {
-    const healthBarPixelWidth: number = 100;
-    const playerCastleHealthPercent: number = healthBarPixelWidth * (this.playerCastle!.hitPoints / this.playerCastle!.maxHitPoints);
-    const enemyCastleHealthPercent: number = healthBarPixelWidth * (this.enemyCastle!.hitPoints / this.enemyCastle!.maxHitPoints);
-    
-    // Using jQuery for DOM manipulation (as in original code)
-    ($ as any)("#itemCurrentCountryHealth").css("width", playerCastleHealthPercent + "px");
-    ($ as any)("#itemEnemyCountryHealth").css("width", enemyCastleHealthPercent + "px");
+    this.playerCastle = new Castle(selfPower, BATTLE_CONSTANTS.WORLD_X);
+    this.enemyCastle = new Castle(enemyPower, this.mapWidth - BATTLE_CONSTANTS.WORLD_X);
+    this.unitManager.updateCastles(this.playerCastle, this.enemyCastle);
   }
 
   public setCountryNames(playerCountryName: string, enemyCountryName: string): void {
@@ -579,13 +376,13 @@ class BattleScreenRender {
   }
 
   public renderBattle(): void {
-    this.drawWorld();
+    this.battleRenderer.drawWorld(this.imageArr);
     if (!this.isBattleStarted) {
-      this.drawStagingArea();
+      this.battleRenderer.drawStagingArea(this.playerTiles);
     }
-    this.renderPlayerSoldiers();
-    this.renderEnemySoldiers();
-    this.drawCastleHealth();
+    this.battleRenderer.renderPlayerSoldiers(this.playerUnits);
+    this.battleRenderer.renderEnemySoldiers(this.enemyUnits);
+    this.battleRenderer.drawCastleHealth(this.playerCastle!, this.enemyCastle!);
   }
 
   public runMainLoop(): void {

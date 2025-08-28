@@ -63,7 +63,7 @@ $(document).on("keydown", function(e) {
 
 // Clear selection when modal is closed
 $("#unitStatsModal").on("hidden.bs.modal", function() {
-  battleScreenRender.renderPlayerSoldiers();
+  battleScreenRender.renderBattle();
 });
 
 let selectedCountryEntry: Country | null = null;

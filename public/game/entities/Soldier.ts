@@ -1,6 +1,7 @@
 import { Castle } from './Castle.js';
 import { Vector } from '../utils/Vector.js';
 import { Soldier as ISoldier } from '../types/types.js';
+import { UnitState } from '../types/types.js';
 
 // Extended interface for the constructor data
 interface SoldierConstructorData {
@@ -15,9 +16,6 @@ interface SoldierConstructorData {
   sFamily?: string;
   rivalCastleXLine?: number;
 }
-
-// Type for unit states
-type UnitState = "stand" | "walk" | "attack";
 
 // Type for enemy unit distance data
 interface EnemyUnitDistance {
@@ -150,7 +148,7 @@ class Soldier implements ISoldier {
     
     // Change unit rotation
     const aimTarget = this.aim;
-    if (this.isMovingUnit(aimTarget)) {
+    if (aimTarget && this.isMovingUnit(aimTarget)) {
       const unitXPos = this.xPos;
       const unitYPos = this.yPos;
       

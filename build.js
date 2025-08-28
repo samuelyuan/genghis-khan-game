@@ -1,6 +1,9 @@
 import { execSync } from 'child_process';
 import { copyFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
+import { platform } from 'os';
+
+const isWindows = platform() === 'win32';
 
 console.log('🚀 Starting TypeScript build...');
 
@@ -17,25 +20,30 @@ try {
   // Copy static assets
   console.log('📁 Copying static assets...');
   
-  // Copy public folder
+  // Copy public folder (cross-platform)
   if (existsSync('public')) {
-    execSync('xcopy public dist\\public /E /I /Y', { stdio: 'inherit' });
+    if (isWindows) {
+      execSync('xcopy public dist\\public /E /I /Y', { stdio: 'inherit' });
+    } else {
+      execSync('cp -r public dist/', { stdio: 'inherit' });
+    }
   }
 
-  // Copy views folder
+  // Copy views folder (cross-platform)
   if (existsSync('views')) {
-    execSync('xcopy views dist\\views /E /I /Y', { stdio: 'inherit' });
+    if (isWindows) {
+      execSync('xcopy views dist\\views /E /I /Y', { stdio: 'inherit' });
+    } else {
+      execSync('cp -r views dist/', { stdio: 'inherit' });
+    }
   }
 
-  // Copy server.js
-  if (existsSync('server.js')) {
-    copyFileSync('server.js', 'dist/server.js');
-  }
-
-  // Copy package.json
-  if (existsSync('package.json')) {
-    copyFileSync('package.json', 'dist/package.json');
-  }
+  // Copy server files
+  ['package.json'].forEach(file => {
+    if (existsSync(file)) {
+      copyFileSync(file, `dist/${file}`);
+    }
+  });
 
   console.log('✅ Build completed successfully!');
   console.log('📦 Output directory: dist/');

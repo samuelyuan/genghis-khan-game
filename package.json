@@ -5,8 +5,8 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "node dist/server.js",
+    "dev": "node --watch dist/server.js",
     "build": "node build.js",
     "build:watch": "tsc --watch",
     "type-check": "tsc --noEmit",
@@ -14,6 +14,9 @@
     "lint:fix": "eslint . --ext .js,.ts --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "dev:full": "npm run build && npm run dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -24,6 +27,7 @@
     "serve-static": "^2.2.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/jquery": "^3.5.32",
     "@types/serve-static": "^1.15.8",
     "@typescript-eslint/eslint-plugin": "^8.39.1",
@@ -31,7 +35,8 @@
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
-    "prettier": "^3.2.5"
+    "prettier": "^3.2.5",
+    "rimraf": "^6.0.1"
   },
   "repository": {
     "type": "git",
