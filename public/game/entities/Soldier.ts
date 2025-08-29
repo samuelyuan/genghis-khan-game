@@ -1,6 +1,5 @@
 import { Castle } from './Castle.js';
 import { Vector } from '../utils/Vector.js';
-import { Soldier as ISoldier } from '../types/types.js';
 import { UnitState } from '../types/types.js';
 
 // Extended interface for the constructor data
@@ -19,12 +18,12 @@ interface SoldierConstructorData {
 
 // Type for enemy unit distance data
 interface EnemyUnitDistance {
-  rival: ISoldier;
+  rival: Soldier;
   dist: number;
   dy: number;
 }
 
-class Soldier implements ISoldier {
+export class Soldier {
   // Position and movement
   public xPos: number;
   public yPos: number;
@@ -62,7 +61,7 @@ class Soldier implements ISoldier {
   public bottomBorder: number;
 
   // Attack
-  public aim: ISoldier | Castle | null;
+  public aim: Soldier | Castle | null;
   public rivalCastle: Castle | null;
   
   // Additional properties
@@ -70,7 +69,7 @@ class Soldier implements ISoldier {
   public v: Vector;
   public sFamily: string;
   public rivalCastleXLine: number;
-  public unitBeingAttackedBy: ISoldier | null;
+  public unitBeingAttackedBy: Soldier | null;
 
   constructor(unitData: SoldierConstructorData) {
     this.xPos = unitData.xPos;
@@ -121,7 +120,7 @@ class Soldier implements ISoldier {
     this.unitBeingAttackedBy = null;
   }
 
-  public runFrame(rivalUnits: ISoldier[]): void {
+  public runFrame(rivalUnits: Soldier[]): void {
     this.checkIsDead();
     this.moveUnit();
     this.getAim(rivalUnits);
@@ -217,7 +216,7 @@ class Soldier implements ISoldier {
     }
 
     if (this.aim && this.isSoldierTarget(this.aim)) {
-      (this.aim as ISoldier).loseHitPoints(this.power);
+      (this.aim as Soldier).loseHitPoints(this.power);
       this.addExp(this.expStep);
     } else if (this.aim && this.isCastleTarget(this.aim)) {
       // Attack castle
@@ -234,19 +233,19 @@ class Soldier implements ISoldier {
     this.checkIsDead();
   }
 
-  private isMovingUnit(aimTarget: ISoldier | Castle | null): boolean {
+  private isMovingUnit(aimTarget: Soldier | Castle | null): boolean {
     return aimTarget !== null && this.isSoldierTarget(aimTarget);
   }
 
-  private isSoldierTarget(target: ISoldier | Castle): target is ISoldier {
+  private isSoldierTarget(target: Soldier | Castle): target is Soldier {
     return 'xPos' in target && 'yPos' in target && !('xLine' in target);
   }
 
-  private isCastleTarget(target: ISoldier | Castle): target is Castle {
+  private isCastleTarget(target: Soldier | Castle): target is Castle {
     return 'xLine' in target;
   }
 
-  private getAim(rivalUnits: ISoldier[]): void {
+  private getAim(rivalUnits: Soldier[]): void {
     // Don't look for new targets
     if (this.aim) {
       if (this.isSoldierTarget(this.aim)) {
@@ -264,7 +263,7 @@ class Soldier implements ISoldier {
 
     const allEnemyUnits: EnemyUnitDistance[] = rivalUnits
       .filter(rivalUnit => !rivalUnit.isDead)
-      .map((rivalUnit: ISoldier) => {
+      .map((rivalUnit: Soldier) => {
         const rivalX = rivalUnit.xPos;
         const rivalY = rivalUnit.yPos;
         const deltaX = rivalX - currentX;
@@ -410,5 +409,4 @@ class Soldier implements ISoldier {
   }
 }
 
-export { Soldier };
-export type { SoldierConstructorData, UnitState, EnemyUnitDistance };
+export type { SoldierConstructorData, EnemyUnitDistance };

@@ -162,7 +162,7 @@ class UnitStats {
   }
 
   // Return attack rate and power rate of the unit on land type
-  private getLandRate(unitType: UnitTypeName, landType: TerrainType): LandRate {
+  public getLandRate(unitType: UnitTypeName, landType: TerrainType): LandRate {
     let rate1: number, rate2: number;
     
     switch (unitType) {

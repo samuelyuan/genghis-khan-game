@@ -1,4 +1,5 @@
-import { TerrainType, FormationUnit, Soldier as ISoldier } from '../types/types.js';
+import { TerrainType, FormationUnit } from '../types/types.js';
+import { Soldier as ISoldier } from '../entities/Soldier.js';
 import { UnitStats } from './UnitStats.js';
 import { SoldierFactory } from './SoldierFactory.js';
 import { Castle } from '../entities/Castle.js';
@@ -49,7 +50,8 @@ export class UnitManager {
     event: MouseEvent, 
     isBattleStarted: boolean,
     playerUnits: ISoldier[],
-    occupiedPlayerSquares: string[]
+    occupiedPlayerSquares: string[],
+    unitTypeId: number = 1
   ): { unit: ISoldier | null; gridKey: string | null } {
     // Don't let player place new units during a battle
     if (isBattleStarted) {
@@ -88,7 +90,7 @@ export class UnitManager {
       centerY: (gridY * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_Y
     };
     
-    const typeId: number = 1;
+    const typeId: number = unitTypeId;
     const playerLevel: number = 0;
     const mapData: MapData = {
       landType: this.landType!,

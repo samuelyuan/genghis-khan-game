@@ -29,6 +29,14 @@ canvas[0].addEventListener('mousedown', function(e) {
   battleScreenRender.placeNewPlayerUnit(canvas[0] as HTMLCanvasElement, e);
 });
 
+canvas[0].addEventListener('mousemove', function(e) {
+  battleScreenRender.handleMouseMove(canvas[0] as HTMLCanvasElement, e);
+});
+
+canvas[0].addEventListener('mouseleave', function() {
+  battleScreenRender.handleMouseLeave();
+});
+
 // Unit stats modal event handlers
 $("#upgradeUnit").on("click", function() {
   const selectedUnit = $("#unitStatsModal").data("selectedUnit");
@@ -305,8 +313,56 @@ export class WorldMapRender {
     // Set the terrain information
     battleScreenRender.setTerrainInfo(countryEntry.land);
     
+    // Generate unit type selector
+    this.generateUnitTypeSelector();
+    
     // Now render the battle
     battleScreenRender.renderBattle();
+  }
+
+  private generateUnitTypeSelector(): void {
+    const unitTypes = battleScreenRender.getUnitTypeInfo();
+    const selector = $("#unitTypeSelector");
+    
+    // Destroy existing tooltips before clearing
+    (selector.find('[data-toggle="tooltip"]') as any).tooltip('dispose');
+    selector.empty();
+    
+    unitTypes.forEach(unitType => {
+      const isSelected = unitType.id === battleScreenRender.getSelectedUnitType();
+      const buttonClass = isSelected ? 'btn-primary' : 'btn-outline-secondary';
+      const selectedIndicator = isSelected ? '✓ ' : '';
+      
+      // Create tooltip content with detailed stats
+      const tooltipContent = `Cost: ${unitType.cost} | HP: ${unitType.hp} | Power: ${unitType.power}<br>${unitType.terrainBonus}`;
+      
+      const unitHtml = `
+        <button type="button" class="btn ${buttonClass} btn-sm unit-type-btn" 
+                data-unit-type="${unitType.id}" 
+                data-toggle="tooltip" 
+                data-html="true"
+                data-placement="top" 
+                title="${tooltipContent}"
+                style="border-color: ${unitType.color}; color: ${unitType.color}; min-width: 80px;">
+          <span class="badge" style="background-color: ${unitType.color}; color: white;">${unitType.abbr}</span>
+          <strong>${selectedIndicator}${unitType.name}</strong>
+        </button>
+      `;
+      
+      selector.append(unitHtml);
+    });
+    
+    // Add click handlers for unit type selection
+    $(".unit-type-btn").on("click", function() {
+      const unitTypeId = parseInt($(this).data("unit-type"));
+      battleScreenRender.setSelectedUnitType(unitTypeId);
+      
+      // Update button styles and regenerate selector to show new selection
+      self.generateUnitTypeSelector();
+    });
+    
+    // Initialize Bootstrap tooltips
+    ($('[data-toggle="tooltip"]') as any).tooltip();
   }
 
   public battleWon(): void {
@@ -323,6 +379,9 @@ export class WorldMapRender {
 
     // Reset battle screen
     battleScreenRender.resetAfterBattle();
+    
+    // Clear unit type selector
+    $("#unitTypeSelector").empty();
 
     const conqueredWorld = this.countryData.every((country) => country.isConquered);
     if (conqueredWorld) {
@@ -392,6 +451,9 @@ $("#buttonRetreatBattle").click(function() {
   $("#world-map").show();
 
   battleScreenRender.resetAfterBattle();
+  
+  // Clear unit type selector
+  $("#unitTypeSelector").empty();
 
   // Lose 10% of gold as a penalty
   self.updateGold(Math.floor(self.gold * 0.9));

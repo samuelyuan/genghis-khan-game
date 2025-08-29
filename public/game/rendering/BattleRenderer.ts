@@ -1,5 +1,6 @@
 import { Castle } from '../entities/Castle.js';
-import { TerrainType, FormationUnit, Soldier as ISoldier } from '../types/types.js';
+import { TerrainType, FormationUnit } from '../types/types.js';
+import { Soldier as ISoldier } from '../entities/Soldier.js';
 import { BATTLE_CONSTANTS, COLORS, UI_CONSTANTS, UNIT_CONSTANTS } from '../constants/GameConstants.js';
 
 // Interface for tile objects

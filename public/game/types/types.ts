@@ -1,3 +1,6 @@
+// Import Soldier class for type definitions
+import { Soldier } from '../entities/Soldier.js';
+
 // Game Data Types
 export interface Country {
   isConquered: boolean;
@@ -40,51 +43,6 @@ export interface UnitData {
   maxHitPoints: number;
   worldY: number;
   tileRow: number;
-}
-
-export interface Soldier {
-  xPos: number;
-  yPos: number;
-  rotation: number;
-  speedTimes: number;
-  typeId: number;
-  currentLevel: number;
-  maxLevel: number;
-  expRate: number;
-  experiencePerLevel: number;
-  experience: number;
-  expStep: number;
-  expUnit: number;
-  power: number;
-  cost: number;
-  goldRate: number;
-  goldStep: number;
-  maxHitPoints: number;
-  hitPoints: number;
-  isDead: boolean;
-  sState: UnitState;
-  F: Vector;
-  standDist: number;
-  hitDist: number;
-  rangeOffset: number;
-  topBorder: number;
-  bottomBorder: number;
-  // Additional properties found by TypeScript
-  unitBeingAttackedBy: Soldier | null;
-  rivalCastleXLine: number;
-  initv: Vector;
-  v: Vector;
-  sFamily: string; // "player" or "enemy"
-  aim: Soldier | any; // Can be either a Soldier or Castle (imported from Castle.ts)
-  rivalCastle: any; // Castle type imported from Castle.ts
-  // Additional properties used in Soldier.js
-  stAttackCastle: (position: number) => void;
-  loseHitPoints: (power: number) => void;
-  setState: (state: UnitState) => void;
-  setExp: (exp: number) => void;
-  addExp: (exp: number) => void;
-  runFrame: (rivalUnits: Soldier[]) => void;
-  setFighting: (isBattleStarted: boolean) => void;
 }
 
 export interface Vector {
