@@ -95,7 +95,19 @@ class BattleScreenRender {
   }
 
   private loadAllImages(): void {
-    const imageNames: string[] = ['/img/mongol_base.png', '/img/ground_base.png', '/img/enemy_base.png'];
+    const imageNames: string[] = [
+      '/img/mongol_base.png', 
+      '/img/ground_base.png', 
+      '/img/enemy_base.png',
+      '/img/mongol_cavalry.png',  // Cavalry (typeId = 0)
+      '/img/mongol_pike.png',     // Pike (typeId = 1)
+      '/img/mongol_sword.png',    // Sword (typeId = 2)
+      '/img/mongol_bow.png',      // Bow (typeId = 3)
+      '/img/enemy_cavalry.png',   // Enemy Cavalry (typeId = 0)
+      '/img/enemy_pike.png',      // Enemy Pike (typeId = 1)
+      '/img/enemy_sword.png',     // Enemy Sword (typeId = 2)
+      '/img/enemy_bow.png'        // Enemy Bow (typeId = 3)
+    ];
     this.totalImages = imageNames.length;
     
     imageNames.forEach((name: string) => {
@@ -225,7 +237,7 @@ class BattleScreenRender {
     this.updateModalWithUnitStats(unit);
     
     // Re-render to show updated state
-    this.battleRenderer.renderPlayerSoldiers(this.playerUnits);
+    this.battleRenderer.renderPlayerSoldiers(this.playerUnits, this.imageArr);
   }
 
   private updateModalWithUnitStats(unit: ISoldier): void {
@@ -266,7 +278,7 @@ class BattleScreenRender {
       // New unit was placed
       this.playerUnits.push(result.unit);
       this.occupiedPlayerSquares.push(result.gridKey);
-      this.battleRenderer.renderPlayerSoldiers(this.playerUnits);
+      this.battleRenderer.renderPlayerSoldiers(this.playerUnits, this.imageArr);
     } else if (result.unit && !result.gridKey) {
       // Existing unit was clicked - show stats modal
       this.showUnitStatsModal(result.unit);
@@ -421,8 +433,8 @@ class BattleScreenRender {
     if (!this.isBattleStarted) {
       this.battleRenderer.drawStagingArea(this.playerTiles);
     }
-    this.battleRenderer.renderPlayerSoldiers(this.playerUnits);
-    this.battleRenderer.renderEnemySoldiers(this.enemyUnits);
+    this.battleRenderer.renderPlayerSoldiers(this.playerUnits, this.imageArr);
+    this.battleRenderer.renderEnemySoldiers(this.enemyUnits, this.imageArr);
     this.battleRenderer.drawCastleHealth(this.playerCastle!, this.enemyCastle!);
     
     // Render grid highlighting if hovering over a valid position

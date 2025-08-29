@@ -336,6 +336,29 @@ export class WorldMapRender {
       // Create tooltip content with detailed stats
       const tooltipContent = `Cost: ${unitType.cost} | HP: ${unitType.hp} | Power: ${unitType.power}<br>${unitType.terrainBonus}`;
       
+      // Use sprite images for all unit types now
+      let unitIcon = '';
+      let spritePath = '';
+      
+      switch (unitType.id) {
+        case 0: // Cavalry
+          spritePath = '/img/mongol_cavalry.png';
+          break;
+        case 1: // Pike
+          spritePath = '/img/mongol_pike.png';
+          break;
+        case 2: // Sword
+          spritePath = '/img/mongol_sword.png';
+          break;
+        case 3: // Bow
+          spritePath = '/img/mongol_bow.png';
+          break;
+        default:
+          spritePath = '/img/mongol_pike.png'; // fallback
+      }
+      
+      unitIcon = `<img src="${spritePath}" alt="${unitType.name}" style="width: 20px; height: 20px; margin-right: 5px; vertical-align: middle;">`;
+      
       const unitHtml = `
         <button type="button" class="btn ${buttonClass} btn-sm unit-type-btn" 
                 data-unit-type="${unitType.id}" 
@@ -344,7 +367,7 @@ export class WorldMapRender {
                 data-placement="top" 
                 title="${tooltipContent}"
                 style="border-color: ${unitType.color}; color: ${unitType.color}; min-width: 80px;">
-          <span class="badge" style="background-color: ${unitType.color}; color: white;">${unitType.abbr}</span>
+          ${unitIcon}
           <strong>${selectedIndicator}${unitType.name}</strong>
         </button>
       `;
