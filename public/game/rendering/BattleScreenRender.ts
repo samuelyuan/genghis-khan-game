@@ -50,10 +50,10 @@ class BattleScreenRender {
   private isBattleStarted: boolean = false;
   public isVictory: boolean = false;
   public isGameOver: boolean = false;
-  
+
   // Grid highlighting
   private hoveredGridPos: { x: number; y: number } | null = null;
-  
+
   // Unit type selection
   private selectedUnitType: number = 1; // Default to Pike
 
@@ -96,8 +96,8 @@ class BattleScreenRender {
 
   private loadAllImages(): void {
     const imageNames: string[] = [
-      '/img/mongol_base.png', 
-      '/img/ground_base.png', 
+      '/img/mongol_base.png',
+      '/img/ground_base.png',
       '/img/enemy_base.png',
       '/img/mongol_cavalry.png',  // Cavalry (typeId = 0)
       '/img/mongol_pike.png',     // Pike (typeId = 1)
@@ -109,7 +109,7 @@ class BattleScreenRender {
       '/img/enemy_bow.png'        // Enemy Bow (typeId = 3)
     ];
     this.totalImages = imageNames.length;
-    
+
     imageNames.forEach((name: string) => {
       const image = new Image();
       image.src = name;
@@ -143,17 +143,17 @@ class BattleScreenRender {
   public createWorld(countryName: string, landType: TerrainType): void {
     this.landType = landType;
     this.unitManager.updateLandType(landType);
-    
+
     // Reset at beginning of each battle
     this.playerTiles = [];
-    
+
     for (let r = 0; r < BATTLE_CONSTANTS.TILE_ROW; r++) {
       for (let c = 0; c < BATTLE_CONSTANTS.TILE_COLUMN; c++) {
         const posX: number = BATTLE_CONSTANTS.TILE_WIDTH * c + BATTLE_CONSTANTS.WORLD_X;
         const posY: number = BATTLE_CONSTANTS.TILE_WIDTH * r + BATTLE_CONSTANTS.WORLD_Y;
         const centerX: number = posX + BATTLE_CONSTANTS.TILE_WIDTH / 2;
         const centerY: number = posY + BATTLE_CONSTANTS.TILE_WIDTH / 2;
-        
+
         const tileObj: Tile = {
           x: posX,
           y: posY,
@@ -167,30 +167,37 @@ class BattleScreenRender {
       }
     }
 
-    // Reset position of player units
+    // Reset position of player units using smart placement to prevent overlaps
     if (this.playerUnits.length > 0 && this.occupiedPlayerSquares.length === 0) {
       for (let i = 0; i < this.playerUnits.length; i++) {
         const unit = this.playerUnits[i];
         if (!unit) continue;
-        
-        const nextGridLocation: GridLocation | null = this.findNextEmptyGridLocation();
-        // This shouldn't be possible because you can't place more units on the board
-        // than there are squares
+
+        // Get unit size to prevent overlapping (especially for cavalry)
+        const unitSize = this.unitManager.getUnitSize(unit.typeId);
+
+        // Find a location that can accommodate this unit's size
+        const nextGridLocation: GridLocation | null = this.unitManager.findNextEmptyGridLocationForUnit(this.occupiedPlayerSquares, unitSize);
         if (!nextGridLocation) {
           break;
         }
 
+        // Place the unit
         unit.xPos = (nextGridLocation.gridX * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_X;
         unit.yPos = (nextGridLocation.gridY * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_Y;
-        const gridKey: string = nextGridLocation.gridX + "," + nextGridLocation.gridY;
-        this.occupiedPlayerSquares.push(gridKey);
+
+        // Reserve all squares this unit occupies
+        for (let x = nextGridLocation.gridX; x < nextGridLocation.gridX + unitSize.width; x++) {
+          for (let y = nextGridLocation.gridY; y < nextGridLocation.gridY + unitSize.height; y++) {
+            const gridKey: string = this.unitManager.getGridKey(x, y);
+            this.occupiedPlayerSquares.push(gridKey);
+          }
+        }
       }
     }
   }
 
-  private findNextEmptyGridLocation(): GridLocation | null {
-    return this.unitManager.findNextEmptyGridLocation(this.occupiedPlayerSquares);
-  }
+
 
 
 
@@ -208,24 +215,24 @@ class BattleScreenRender {
 
   public sellUnit(unit: ISoldier): number {
     const result = this.unitManager.sellUnit(unit, this.playerUnits, this.occupiedPlayerSquares);
-    
+
     // Update the arrays with the results
     this.playerUnits = result.updatedPlayerUnits;
     this.occupiedPlayerSquares = result.updatedOccupiedSquares;
-    
+
     // Clear the specific area where the unit was and redraw everything
     this.renderBattle();
-    
+
     return result.sellValue;
   }
 
   public showUnitStatsModal(unit: ISoldier): void {
     // Always get fresh stats when showing the modal
     this.updateModalWithUnitStats(unit);
-    
+
     // Store reference to current unit for button actions
     ($ as any)("#unitStatsModal").data("selectedUnit", unit);
-    
+
     // Show the modal
     ($ as any)("#unitStatsModal").modal("show");
   }
@@ -235,7 +242,7 @@ class BattleScreenRender {
 
     // Update the modal with new stats
     this.updateModalWithUnitStats(unit);
-    
+
     // Re-render to show updated state
     this.battleRenderer.renderPlayerSoldiers(this.playerUnits, this.imageArr);
   }
@@ -243,7 +250,7 @@ class BattleScreenRender {
   private updateModalWithUnitStats(unit: ISoldier): void {
     const stats = this.getUnitStats(unit);
     const upgradePreview = this.getUpgradePreview(unit);
-    
+
     // Update modal with current unit stats
     ($ as any)("#unitCost").text(stats.cost);
     ($ as any)("#unitType").text(stats.type);
@@ -251,7 +258,7 @@ class BattleScreenRender {
     ($ as any)("#unitPower").text(stats.power);
     ($ as any)("#unitHP").text(stats.hp);
     ($ as any)("#unitExp").text(stats.exp);
-    
+
     // Update upgrade preview
     ($ as any)("#upgradeCost").text(upgradePreview.cost);
     ($ as any)("#upgradeLevel").text(upgradePreview.level);
@@ -266,10 +273,10 @@ class BattleScreenRender {
 
   public placeNewPlayerUnit(canvas: HTMLCanvasElement, event: MouseEvent): void {
     const result = this.unitManager.placeNewPlayerUnit(
-      canvas, 
-      event, 
-      this.isBattleStarted, 
-      this.playerUnits, 
+      canvas,
+      event,
+      this.isBattleStarted,
+      this.playerUnits,
       this.occupiedPlayerSquares,
       this.selectedUnitType
     );
@@ -277,7 +284,8 @@ class BattleScreenRender {
     if (result.unit && result.gridKey) {
       // New unit was placed
       this.playerUnits.push(result.unit);
-      this.occupiedPlayerSquares.push(result.gridKey);
+      // Add all occupied squares for multi-square units (like cavalry)
+      this.occupiedPlayerSquares.push(...result.occupiedSquares);
       this.battleRenderer.renderPlayerSoldiers(this.playerUnits, this.imageArr);
     } else if (result.unit && !result.gridKey) {
       // Existing unit was clicked - show stats modal
@@ -289,7 +297,7 @@ class BattleScreenRender {
     this.enemyShape = enemyShape;
     this.enemyLevel = enemyLevel;
     this.enemyUnits = [];
-    
+
     for (let i = 0; i < this.enemyShape.length; i++) {
       const typeId: number = this.enemyShape[i].typeId;
       if (typeId !== null) {
@@ -321,7 +329,7 @@ class BattleScreenRender {
 
   public setTerrainInfo(landType: TerrainType): void {
     let terrainImage = '';
-    
+
     // Add terrain-specific images
     switch (landType) {
       case 'Plain':
@@ -339,9 +347,9 @@ class BattleScreenRender {
       default:
         terrainImage = '<img src="/img/terrain-plain.png" alt="Default Terrain" style="max-width: 120px; max-height: 80px; width: auto; height: auto; border-radius: 4px; margin-top: 8px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load default image\');">';
     }
-    
+
     console.log(`Setting terrain info for: ${landType}, Image HTML: ${terrainImage}`);
-    
+
     ($ as any)("#itemTerrain").html(`
       <div class="text-center">
         <p><b>${landType}</b></p>
@@ -354,7 +362,7 @@ class BattleScreenRender {
     this.isBattleStarted = true;
     this.isVictory = false;
     this.isGameOver = false;
-    
+
     // Clear grid highlighting when battle starts
     this.hoveredGridPos = null;
 
@@ -407,7 +415,7 @@ class BattleScreenRender {
     this.enemyUnits = [];
 
     this.occupiedPlayerSquares = [];
-    
+
     // Clear grid highlighting
     this.hoveredGridPos = null;
 
@@ -436,7 +444,7 @@ class BattleScreenRender {
     this.battleRenderer.renderPlayerSoldiers(this.playerUnits, this.imageArr);
     this.battleRenderer.renderEnemySoldiers(this.enemyUnits, this.imageArr);
     this.battleRenderer.drawCastleHealth(this.playerCastle!, this.enemyCastle!);
-    
+
     // Render grid highlighting if hovering over a valid position
     if (this.hoveredGridPos && !this.isBattleStarted) {
       this.renderGridHighlight();
@@ -446,7 +454,7 @@ class BattleScreenRender {
   public runMainLoop(): void {
     this.ctx.clearRect(0, 0, 800, 600);
     const allSoldiers: ISoldier[] = this.playerUnits.concat(this.enemyUnits);
-    
+
     for (let i = 0; i < allSoldiers.length; i++) {
       let rivalUnits: ISoldier[];
       if (allSoldiers[i].sFamily === "player") {
@@ -512,7 +520,7 @@ class BattleScreenRender {
       const baseHp = this.unitStats.hitPoints[i];
       const basePower = this.unitStats.power[i];
       const cost = this.unitStats.unitCost[i];
-      
+
       // Get terrain bonus/penalty for current land type
       let terrainBonus = "No bonus";
       if (this.landType) {
@@ -520,24 +528,24 @@ class BattleScreenRender {
         const landRates = this.unitStats.getLandRate(roleType, this.landType);
         const hpRate = landRates[0];
         const powerRate = landRates[1];
-        
+
         if (hpRate !== 0 || powerRate !== 0) {
           const hpBonus = hpRate > 0 ? `+${Math.round(hpRate * 100)}% HP` : `${Math.round(hpRate * 100)}% HP`;
           const powerBonus = powerRate > 0 ? `+${Math.round(powerRate * 100)}% Power` : `${Math.round(powerRate * 100)}% Power`;
           terrainBonus = `${hpBonus}, ${powerBonus}`;
         }
       }
-      
-             unitTypes.push({
-         id: i,
-         name: this.unitStats.roleTypes[i].charAt(0).toUpperCase() + this.unitStats.roleTypes[i].slice(1),
-         abbr: this.unitStats.roleTypes[i].charAt(0).toUpperCase(),
-         color: UNIT_CONSTANTS.UNIT_TYPE_COLORS[i],
-         cost: cost,
-         hp: baseHp,
-         power: basePower,
-         terrainBonus: terrainBonus
-       });
+
+      unitTypes.push({
+        id: i,
+        name: this.unitStats.roleTypes[i].charAt(0).toUpperCase() + this.unitStats.roleTypes[i].slice(1),
+        abbr: this.unitStats.roleTypes[i].charAt(0).toUpperCase(),
+        color: UNIT_CONSTANTS.UNIT_TYPE_COLORS[i],
+        cost: cost,
+        hp: baseHp,
+        power: basePower,
+        terrainBonus: terrainBonus
+      });
     }
     return unitTypes;
   }
@@ -545,14 +553,14 @@ class BattleScreenRender {
   // Grid highlighting methods
   public handleMouseMove(canvas: HTMLCanvasElement, event: MouseEvent): void {
     if (this.isBattleStarted) return;
-    
+
     const rect: DOMRect = canvas.getBoundingClientRect();
     const mouseX: number = event.clientX - rect.left;
     const mouseY: number = event.clientY - rect.top;
-    
+
     const gridPos = this.getGridPosition(mouseX, mouseY);
-    
-    if (gridPos && this.isValidGridPosition(gridPos)) {
+
+    if (gridPos && !this.unitManager.isGridPositionOccupied(gridPos.x, gridPos.y, this.occupiedPlayerSquares)) {
       this.hoveredGridPos = gridPos;
       this.renderBattle(); // Re-render with highlight
     } else {
@@ -569,41 +577,65 @@ class BattleScreenRender {
   private getGridPosition(mouseX: number, mouseY: number): { x: number; y: number } | null {
     const gridX: number = Math.floor((mouseX - BATTLE_CONSTANTS.WORLD_X) / BATTLE_CONSTANTS.TILE_WIDTH);
     const gridY: number = Math.floor((mouseY - BATTLE_CONSTANTS.WORLD_Y) / BATTLE_CONSTANTS.TILE_WIDTH);
-    
-    if (gridX < 0 || gridX >= BATTLE_CONSTANTS.TILE_COLUMN || 
-        gridY < 0 || gridY >= BATTLE_CONSTANTS.TILE_ROW) {
+
+    if (gridX < 0 || gridX >= BATTLE_CONSTANTS.TILE_COLUMN ||
+      gridY < 0 || gridY >= BATTLE_CONSTANTS.TILE_ROW) {
       return null;
     }
-    
+
     return { x: gridX, y: gridY };
-  }
-
-  private isValidGridPosition(gridPos: { x: number; y: number }): boolean {
-    const key: string = this.getGridKey(gridPos.x, gridPos.y);
-    return !this.occupiedPlayerSquares.includes(key);
-  }
-
-  private getGridKey(gridX: number, gridY: number): string {
-    return `${gridX},${gridY}`;
   }
 
   private renderGridHighlight(): void {
     if (!this.hoveredGridPos) return;
-    
-    // Draw semi-transparent highlight on hovered square
+
+    // Get unit size for highlighting
+    const unitSize = this.unitManager.getUnitSize(this.selectedUnitType);
+    const highlightWidth = BATTLE_CONSTANTS.TILE_WIDTH * unitSize.width;
+    const highlightHeight = BATTLE_CONSTANTS.TILE_WIDTH * unitSize.height;
+
+    // Check if we can place the unit at this position
+    const canPlace = this.unitManager.canPlaceUnit(this.hoveredGridPos.x, this.hoveredGridPos.y, unitSize, this.occupiedPlayerSquares);
+
+    // Additional validation: Check if placing this unit would create an invalid grid state
+    // This prevents showing green when the placement would block future valid placements
+    let isValidPlacement = canPlace.canPlace;
+
+    if (isValidPlacement) {
+      // Simulate placing the unit and check if the remaining grid is still valid
+      const simulatedOccupiedSquares = [...this.occupiedPlayerSquares, ...canPlace.occupiedSquares];
+
+      // Check if there are any remaining valid placements for other unit types
+      // This is a simplified check - in practice, you might want more sophisticated validation
+      const remainingSpace = this.calculateRemainingValidSpace(simulatedOccupiedSquares);
+      const minRequiredSpace = unitSize.width * unitSize.height; // Dynamic based on unit size
+      if (remainingSpace < minRequiredSpace) {
+        isValidPlacement = false;
+      }
+    }
+
+    // Draw semi-transparent highlight on hovered squares
     const x: number = (this.hoveredGridPos.x * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_X;
     const y: number = (this.hoveredGridPos.y * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_Y;
-    
-    this.ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
-    this.ctx.fillRect(x, y, BATTLE_CONSTANTS.TILE_WIDTH, BATTLE_CONSTANTS.TILE_WIDTH);
-    
-    // Draw border around the highlighted square
-    this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+
+    // Use different colors based on whether placement is valid
+    const fillColor = isValidPlacement ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)';
+    const strokeColor = isValidPlacement ? 'rgba(0, 255, 0, 0.8)' : 'rgba(255, 0, 0, 0.8)';
+
+    this.ctx.fillStyle = fillColor;
+    this.ctx.fillRect(x, y, highlightWidth, highlightHeight);
+
+    // Draw border around the highlighted squares
+    this.ctx.strokeStyle = strokeColor;
     this.ctx.lineWidth = 2;
-    this.ctx.strokeRect(x, y, BATTLE_CONSTANTS.TILE_WIDTH, BATTLE_CONSTANTS.TILE_WIDTH);
-    
+    this.ctx.strokeRect(x, y, highlightWidth, highlightHeight);
+
     // Reset line width
     this.ctx.lineWidth = 1;
+  }
+
+  private calculateRemainingValidSpace(occupiedSquares: string[]): number {
+    return this.unitManager.calculateRemainingValidSpace(occupiedSquares);
   }
 }
 

@@ -16,6 +16,13 @@ export const UNIT_CONSTANTS = {
   UNIT_TYPE_COLORS: ["#8B4513", "#228B22", "#4169E1", "#8B008B"]
 } as const;
 
+export const UNIT_SIZES = {
+  CAVALRY: { width: 2, height: 1 },
+  PIKE: { width: 1, height: 1 },
+  SWORD: { width: 1, height: 1 },
+  BOW: { width: 1, height: 1 }
+} as const;
+
 export const UI_CONSTANTS = {
   HEALTH_BAR_PIXEL_WIDTH: 100,
   UNIT_CIRCLE_RADIUS: 8,

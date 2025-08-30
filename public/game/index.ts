@@ -10,3 +10,4 @@ export { Enemy } from './entities/Enemy.js';
 export { Castle } from './entities/Castle.js';
 export { Vector } from './utils/Vector.js';
 export * from './types/types.js';
+export * from './constants/index.js';

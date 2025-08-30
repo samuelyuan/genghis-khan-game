@@ -1,7 +1,7 @@
 import { Castle } from '../entities/Castle.js';
 import { TerrainType, FormationUnit } from '../types/types.js';
 import { Soldier as ISoldier } from '../entities/Soldier.js';
-import { BATTLE_CONSTANTS, COLORS, UI_CONSTANTS, UNIT_CONSTANTS } from '../constants/GameConstants.js';
+import { BATTLE_CONSTANTS, COLORS, UI_CONSTANTS, UNIT_CONSTANTS, UNIT_SIZES } from '../constants/GameConstants.js';
 
 // Interface for tile objects
 interface Tile {
@@ -103,36 +103,46 @@ export class BattleRenderer {
       }
     }
     
+    // Get unit size for rendering
+    const unitSize = this.getUnitSize(soldier.typeId);
+    const renderWidth = BATTLE_CONSTANTS.TILE_WIDTH * unitSize.width;
+    const renderHeight = BATTLE_CONSTANTS.TILE_WIDTH * unitSize.height;
+    
+    // Units are now positioned at the top-left corner of their grid square
+    // No need to calculate offset - use positions as-is
+    const renderX = xStart;
+    const renderY = yStart;
+    
     // Draw the sprite
     if (soldier.sFamily === "enemy") {
       // Flip enemy units horizontally to face left
       this.ctx.save();
-      this.ctx.translate(xStart + BATTLE_CONSTANTS.TILE_WIDTH, yStart);
+      this.ctx.translate(renderX + renderWidth, renderY);
       this.ctx.scale(-1, 1);
       this.ctx.drawImage(
         imageArr[spriteIndex], 
         0, 
         0, 
-        BATTLE_CONSTANTS.TILE_WIDTH, 
-        BATTLE_CONSTANTS.TILE_WIDTH
+        renderWidth, 
+        renderHeight
       );
       this.ctx.restore();
     } else {
       // Player units face right (normal)
       this.ctx.drawImage(
         imageArr[spriteIndex], 
-        xStart, 
-        yStart, 
-        BATTLE_CONSTANTS.TILE_WIDTH, 
-        BATTLE_CONSTANTS.TILE_WIDTH
+        renderX, 
+        renderY, 
+        renderWidth, 
+        renderHeight
       );
     }
     
     // Draw health bar overlay on top of sprite
-    this.drawHealthBarOverlay(soldier, xStart, yStart);
+    this.drawHealthBarOverlay(soldier, renderX, renderY);
     
     // Draw level indicator in top left corner (white number, no background)
-    this.drawLevelIndicator(soldier, xStart, yStart);
+    this.drawLevelIndicator(soldier, renderX, renderY);
   }
 
   private renderSoldierFallback(soldier: ISoldier, xStart: number, yStart: number, color: string): void {
@@ -163,6 +173,21 @@ export class BattleRenderer {
     // Reset text alignment and line width
     this.ctx.textAlign = "left";
     this.ctx.lineWidth = 1;
+  }
+
+  private getUnitSize(unitTypeId: number): { width: number; height: number } {
+    switch (unitTypeId) {
+      case 0: // Cavalry
+        return UNIT_SIZES.CAVALRY;
+      case 1: // Pike
+        return UNIT_SIZES.PIKE;
+      case 2: // Sword
+        return UNIT_SIZES.SWORD;
+      case 3: // Bow
+        return UNIT_SIZES.BOW;
+      default:
+        return UNIT_SIZES.PIKE; // fallback
+    }
   }
 
   private drawHealthBarOverlay(soldier: ISoldier, xStart: number, yStart: number): void {

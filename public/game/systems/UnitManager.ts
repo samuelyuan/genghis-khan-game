@@ -3,7 +3,7 @@ import { Soldier as ISoldier } from '../entities/Soldier.js';
 import { UnitStats } from './UnitStats.js';
 import { SoldierFactory } from './SoldierFactory.js';
 import { Castle } from '../entities/Castle.js';
-import { BATTLE_CONSTANTS, UNIT_CONSTANTS } from '../constants/GameConstants.js';
+import { BATTLE_CONSTANTS, UNIT_CONSTANTS, UNIT_SIZES } from '../constants/GameConstants.js';
 
 // Interface for tile objects
 interface Tile {
@@ -52,41 +52,41 @@ export class UnitManager {
     playerUnits: ISoldier[],
     occupiedPlayerSquares: string[],
     unitTypeId: number = 1
-  ): { unit: ISoldier | null; gridKey: string | null } {
+  ): { unit: ISoldier | null; gridKey: string | null; occupiedSquares: string[] } {
     // Don't let player place new units during a battle
     if (isBattleStarted) {
-      return { unit: null, gridKey: null };
+      return { unit: null, gridKey: null, occupiedSquares: [] };
     }
 
     const rect: DOMRect = canvas.getBoundingClientRect();
     const mouseX: number = event.clientX - rect.left;
     const mouseY: number = event.clientY - rect.top;
 
-    const gridX: number = Math.floor((mouseX - BATTLE_CONSTANTS.WORLD_X) / BATTLE_CONSTANTS.TILE_WIDTH);
-    const gridY: number = Math.floor((mouseY - BATTLE_CONSTANTS.WORLD_Y) / BATTLE_CONSTANTS.TILE_WIDTH);
+    const { gridX, gridY } = this.getGridPositionFromPixel(mouseX, mouseY);
 
     // Check if there's a unit at this position first
     const existingUnit = this.findUnitAtPosition(gridX, gridY, playerUnits);
     if (existingUnit) {
       // Return existing unit to show stats modal
-      return { unit: existingUnit, gridKey: null };
+      return { unit: existingUnit, gridKey: null, occupiedSquares: [] };
     }
 
-    const key: string = this.getGridKey(gridX, gridY);
-    if (occupiedPlayerSquares.includes(key)) {
-      // This shouldn't happen now since we check for units first, but keeping as fallback
-      return { unit: null, gridKey: null };
-    }
+    // Get unit size for this unit type
+    const unitSize = this.getUnitSize(unitTypeId);
     
-    if (gridX < 0 || gridX >= BATTLE_CONSTANTS.TILE_COLUMN) {
-      return { unit: null, gridKey: null };
+    // Check if we can place the unit (including multi-square validation for cavalry)
+    const placementResult = this.canPlaceUnit(gridX, gridY, unitSize, occupiedPlayerSquares);
+    if (!placementResult.canPlace) {
+      return { unit: null, gridKey: null, occupiedSquares: [] };
     }
-    if (gridY < 0 || gridY >= BATTLE_CONSTANTS.TILE_ROW) {
-      return { unit: null, gridKey: null };
-    }
+
+    // All units should be positioned at the top-left corner of their grid square
+    // For cavalry: starts at gridX, spans to gridX+1
+    // For other units: starts at gridX
+    const centerX: number = gridX * BATTLE_CONSTANTS.TILE_WIDTH + BATTLE_CONSTANTS.WORLD_X;
 
     const tileObj: TileObject = {
-      centerX: (gridX * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_X,
+      centerX: centerX,
       centerY: (gridY * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_Y
     };
     
@@ -99,7 +99,11 @@ export class UnitManager {
     };
     
     const playerUnit: ISoldier = this.soldierFactory.createPlayerUnit(tileObj, typeId, playerLevel, mapData);
-    return { unit: playerUnit, gridKey: key };
+    return { 
+      unit: playerUnit, 
+      gridKey: placementResult.primaryKey, 
+      occupiedSquares: placementResult.occupiedSquares 
+    };
   }
 
   public sellUnit(
@@ -109,15 +113,22 @@ export class UnitManager {
   ): { sellValue: number; updatedPlayerUnits: ISoldier[]; updatedOccupiedSquares: string[] } {
     const sellValue = Math.floor(this.unitStats.unitCost[unit.typeId] * 0.75);
     
-    // Remove unit from occupied squares
-    const unitGridX = Math.floor((unit.xPos - BATTLE_CONSTANTS.WORLD_X) / BATTLE_CONSTANTS.TILE_WIDTH);
-    const unitGridY = Math.floor((unit.yPos - BATTLE_CONSTANTS.WORLD_Y) / BATTLE_CONSTANTS.TILE_WIDTH);
-    const key = this.getGridKey(unitGridX, unitGridY);
+    // Get unit size and calculate which squares it occupies
+    const unitSize = this.getUnitSize(unit.typeId);
     
+    // For cavalry, we need to find the leftmost square it occupies
+    const { gridX: unitGridX, gridY: unitGridY } = this.getGridPositionFromPixel(unit.xPos, unit.yPos);
+    
+    // Remove all squares this unit occupies
     const updatedOccupiedSquares = [...occupiedPlayerSquares];
-    const index = updatedOccupiedSquares.indexOf(key);
-    if (index > -1) {
-      updatedOccupiedSquares.splice(index, 1);
+    for (let x = unitGridX; x < unitGridX + unitSize.width; x++) {
+      for (let y = unitGridY; y < unitGridY + unitSize.height; y++) {
+        const key = this.getGridKey(x, y);
+        const index = updatedOccupiedSquares.indexOf(key);
+        if (index > -1) {
+          updatedOccupiedSquares.splice(index, 1);
+        }
+      }
     }
     
     // Remove unit from player units
@@ -128,6 +139,55 @@ export class UnitManager {
     }
     
     return { sellValue, updatedPlayerUnits, updatedOccupiedSquares };
+  }
+
+  public getUnitSize(unitTypeId: number): { width: number; height: number } {
+    switch (unitTypeId) {
+      case 0: // Cavalry
+        return UNIT_SIZES.CAVALRY;
+      case 1: // Pike
+        return UNIT_SIZES.PIKE;
+      case 2: // Sword
+        return UNIT_SIZES.SWORD;
+      case 3: // Bow
+        return UNIT_SIZES.BOW;
+      default:
+        return UNIT_SIZES.PIKE; // fallback
+    }
+  }
+
+  public canPlaceUnit(
+    gridX: number, 
+    gridY: number, 
+    unitSize: { width: number; height: number },
+    occupiedPlayerSquares: string[]
+  ): { canPlace: boolean; primaryKey: string; occupiedSquares: string[] } {
+    // Check bounds - ensure cavalry doesn't go outside 9x9 grid
+    if (!this.isWithinBounds(gridX, gridY, unitSize)) {
+      return { canPlace: false, primaryKey: '', occupiedSquares: [] };
+    }
+
+    // Check if all required squares are available
+    const requiredSquares: string[] = [];
+    for (let x = gridX; x < gridX + unitSize.width; x++) {
+      for (let y = gridY; y < gridY + unitSize.height; y++) {
+        const key = this.getGridKey(x, y);
+        if (occupiedPlayerSquares.includes(key)) {
+          return { canPlace: false, primaryKey: '', occupiedSquares: [] };
+        }
+        requiredSquares.push(key);
+      }
+    }
+
+    // Primary key is the leftmost square for cavalry, or the single square for others
+    const primaryKey = this.getGridKey(gridX, gridY);
+
+    return { canPlace: true, primaryKey, occupiedSquares: requiredSquares };
+  }
+
+  public isGridPositionOccupied(gridX: number, gridY: number, occupiedPlayerSquares: string[]): boolean {
+    const key = this.getGridKey(gridX, gridY);
+    return occupiedPlayerSquares.includes(key);
   }
 
   public upgradeUnit(unit: ISoldier): void {
@@ -148,10 +208,14 @@ export class UnitManager {
   public findUnitAtPosition(x: number, y: number, playerUnits: ISoldier[]): ISoldier | null {
     for (let i = 0; i < playerUnits.length; i++) {
       const unit = playerUnits[i];
-      const unitGridX = Math.floor((unit.xPos - BATTLE_CONSTANTS.WORLD_X) / BATTLE_CONSTANTS.TILE_WIDTH);
-      const unitGridY = Math.floor((unit.yPos - BATTLE_CONSTANTS.WORLD_Y) / BATTLE_CONSTANTS.TILE_WIDTH);
+      const unitSize = this.getUnitSize(unit.typeId);
       
-      if (unitGridX === x && unitGridY === y) {
+      // Calculate the leftmost/topmost grid position of this unit
+      const { gridX: unitGridX, gridY: unitGridY } = this.getGridPositionFromPixel(unit.xPos, unit.yPos);
+      
+      // Check if the clicked position is within this unit's occupied area
+      if (x >= unitGridX && x < unitGridX + unitSize.width &&
+          y >= unitGridY && y < unitGridY + unitSize.height) {
         return unit;
       }
     }
@@ -210,8 +274,56 @@ export class UnitManager {
     return null;
   }
 
-  private getGridKey(gridX: number, gridY: number): string {
+  public findNextEmptyGridLocationForUnit(occupiedPlayerSquares: string[], unitSize: { width: number; height: number }): GridLocation | null {
+    // Search from rightmost column to leftmost (same as original)
+    for (let gridX = BATTLE_CONSTANTS.TILE_COLUMN - 1; gridX >= 0; gridX--) {
+      for (let gridY = 0; gridY < BATTLE_CONSTANTS.TILE_ROW; gridY++) {
+        // Check if this location can accommodate the unit size
+        const canPlace = this.canPlaceUnitAtLocation(gridX, gridY, unitSize, occupiedPlayerSquares);
+        if (canPlace) {
+          return {
+            gridX: gridX,
+            gridY: gridY
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  private canPlaceUnitAtLocation(gridX: number, gridY: number, unitSize: { width: number; height: number }, occupiedPlayerSquares: string[]): boolean {
+    // Check bounds
+    if (!this.isWithinBounds(gridX, gridY, unitSize)) {
+      return false;
+    }
+    
+    // Check if all required squares are available
+    for (let x = gridX; x < gridX + unitSize.width; x++) {
+      for (let y = gridY; y < gridY + unitSize.height; y++) {
+        const key = this.getGridKey(x, y);
+        if (occupiedPlayerSquares.includes(key)) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  }
+
+  public getGridKey(gridX: number, gridY: number): string {
     return gridX + "," + gridY;
+  }
+
+  private getGridPositionFromPixel(xPos: number, yPos: number): { gridX: number; gridY: number } {
+    return {
+      gridX: Math.floor((xPos - BATTLE_CONSTANTS.WORLD_X) / BATTLE_CONSTANTS.TILE_WIDTH),
+      gridY: Math.floor((yPos - BATTLE_CONSTANTS.WORLD_Y) / BATTLE_CONSTANTS.TILE_WIDTH)
+    };
+  }
+
+  private isWithinBounds(gridX: number, gridY: number, unitSize: { width: number; height: number }): boolean {
+    return gridX >= 0 && gridX + unitSize.width <= BATTLE_CONSTANTS.TILE_COLUMN &&
+           gridY >= 0 && gridY + unitSize.height <= BATTLE_CONSTANTS.TILE_ROW;
   }
 
   public canAffordUpgrade(upgradeCost: number, playerGold: number): boolean {
@@ -230,17 +342,26 @@ export class UnitManager {
         const unit = updatedPlayerUnits[i];
         if (!unit) continue;
         
-        const nextGridLocation: GridLocation | null = this.findNextEmptyGridLocation(updatedOccupiedSquares);
-        // This shouldn't be possible because you can't place more units on the board
-        // than there are squares
+        // Get unit size to prevent overlapping (especially for cavalry)
+        const unitSize = this.getUnitSize(unit.typeId);
+        
+        // Find a location that can accommodate this unit's size
+        const nextGridLocation: GridLocation | null = this.findNextEmptyGridLocationForUnit(updatedOccupiedSquares, unitSize);
         if (!nextGridLocation) {
           break;
         }
 
+        // Place the unit
         unit.xPos = (nextGridLocation.gridX * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_X;
         unit.yPos = (nextGridLocation.gridY * BATTLE_CONSTANTS.TILE_WIDTH) + BATTLE_CONSTANTS.WORLD_Y;
-        const gridKey: string = this.getGridKey(nextGridLocation.gridX, nextGridLocation.gridY);
-        updatedOccupiedSquares.push(gridKey);
+        
+        // Reserve all squares this unit occupies
+        for (let x = nextGridLocation.gridX; x < nextGridLocation.gridX + unitSize.width; x++) {
+          for (let y = nextGridLocation.gridY; y < nextGridLocation.gridY + unitSize.height; y++) {
+            const gridKey: string = this.getGridKey(x, y);
+            updatedOccupiedSquares.push(gridKey);
+          }
+        }
       }
     }
 
@@ -254,5 +375,28 @@ export class UnitManager {
   public updateCastles(playerCastle: Castle, enemyCastle: Castle): void {
     this.playerCastle = playerCastle;
     this.enemyCastle = enemyCastle;
+  }
+
+  public calculateRemainingValidSpace(occupiedSquares: string[]): number {
+    let validSpaces = 0;
+    
+    // Check all possible unit types and sizes
+    for (let gridX = 0; gridX < BATTLE_CONSTANTS.TILE_COLUMN - 1; gridX++) {
+      for (let gridY = 0; gridY < BATTLE_CONSTANTS.TILE_ROW; gridY++) {
+        // Try cavalry first (2x1)
+        const canPlaceCavalry = this.canPlaceUnit(gridX, gridY, UNIT_SIZES.CAVALRY, occupiedSquares);
+        if (canPlaceCavalry.canPlace) {
+          validSpaces += UNIT_SIZES.CAVALRY.width * UNIT_SIZES.CAVALRY.height;
+        } else {
+          // Try single units (1x1)
+          const canPlaceSingle = this.canPlaceUnit(gridX, gridY, UNIT_SIZES.PIKE, occupiedSquares);
+          if (canPlaceSingle.canPlace) {
+            validSpaces += UNIT_SIZES.PIKE.width * UNIT_SIZES.PIKE.height;
+          }
+        }
+      }
+    }
+    
+    return validSpaces;
   }
 }
