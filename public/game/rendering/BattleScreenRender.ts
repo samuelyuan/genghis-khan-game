@@ -5,7 +5,7 @@ import { TerrainType, FormationUnit } from '../types/types.js';
 import { Soldier as ISoldier } from '../entities/Soldier.js';
 import { BattleRenderer } from './BattleRenderer.js';
 import { UnitManager } from '../systems/UnitManager.js';
-import { BATTLE_CONSTANTS, UNIT_CONSTANTS } from '../constants/GameConstants.js';
+import { BATTLE_CONSTANTS, UNIT_CONSTANTS, SCREEN_DIMENSIONS } from '../constants/GameConstants.js';
 
 // Interface for tile objects
 interface Tile {
@@ -42,7 +42,7 @@ class BattleScreenRender {
   private ctx: CanvasRenderingContext2D;
 
   // World constants
-  private readonly mapWidth: number = BATTLE_CONSTANTS.MAP_WIDTH;
+  private readonly mapWidth: number = SCREEN_DIMENSIONS.WIDTH;
   private readonly enemyCoordOffset: number;
   private speedTimes: number = 1; // Default is 1, max is 4
 
@@ -350,9 +350,12 @@ class BattleScreenRender {
 
     console.log(`Setting terrain info for: ${landType}, Image HTML: ${terrainImage}`);
 
+    // Update terrain type in header
+    ($ as any)("#itemTerrainType").text(landType);
+    
+    // Update terrain image
     ($ as any)("#itemTerrain").html(`
-      <div class="text-center">
-        <p><b>${landType}</b></p>
+      <div class="terrain-image-container">
         ${terrainImage}
       </div>
     `);

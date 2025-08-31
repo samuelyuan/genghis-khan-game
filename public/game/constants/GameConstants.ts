@@ -1,13 +1,21 @@
 // Game Constants - Centralized configuration values
+export const GAME_SETTINGS = {
+  STARTING_GOLD: 400,
+  INTEREST_RATE: 0.1,
+  RETREAT_PENALTY: 0.1
+} as const;
+
+export const SCREEN_DIMENSIONS = {
+  WIDTH: 800,
+  HEIGHT: 600
+} as const;
+
 export const BATTLE_CONSTANTS = {
   TILE_WIDTH: 32,
   WORLD_X: 110,
   WORLD_Y: 108,
   TILE_ROW: 9,
-  TILE_COLUMN: 9,
-  MAP_WIDTH: 800,
-  SCREEN_WIDTH: 800,
-  SCREEN_HEIGHT: 600
+  TILE_COLUMN: 9
 } as const;
 
 export const UNIT_CONSTANTS = {

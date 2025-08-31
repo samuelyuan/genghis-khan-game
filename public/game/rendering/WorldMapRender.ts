@@ -1,18 +1,10 @@
 import { BattleScreenRender } from './BattleScreenRender.js';
 import { MapCountries } from '../core/MapCountries.js';
 import { Country } from '../types/types.js';
-
-// Declare jvm namespace for the map library
-declare namespace jvm {
-  class Map {
-    constructor(options: any);
-    series: {
-      regions: Array<{
-        setValues: (values: any) => void;
-      }>;
-    };
-  }
-}
+import { MAP_CONFIG } from '../config/MapConfig.js';
+import { GAME_SETTINGS, SCREEN_DIMENSIONS } from '../constants/GameConstants.js';
+import { IMapRenderer } from '../interfaces/IMapRenderer.js';
+import { MapRendererFactory } from './factories/MapRendererFactory.js';
 
 // Extend jQuery to include modal method
 declare global {
@@ -76,12 +68,11 @@ $("#unitStatsModal").on("hidden.bs.modal", function() {
 
 let selectedCountryEntry: Country | null = null;
 let self: WorldMapRender;
-const interest = 0.1;
 
 export class WorldMapRender {
   private countryData: Country[];
-  private map: jvm.Map;
-  public gold: number = 400;
+  private mapRenderer: IMapRenderer;
+  public gold: number = GAME_SETTINGS.STARTING_GOLD;
 
   constructor(countryData: Country[]) {
     $("#battle-map").hide();
@@ -89,8 +80,10 @@ export class WorldMapRender {
     self = this;
 
     this.countryData = countryData;
-    this.map = this.buildMap(countryData);
-    this.updateGold(400);
+    this.mapRenderer = MapRendererFactory.createDefaultMapRenderer($('#world-map-container'));
+    this.mapRenderer.buildMap(countryData);
+    this.setupMapEventHandlers();
+    this.updateGold(GAME_SETTINGS.STARTING_GOLD);
 
     // Audio logic
     const audioButton = $("#audioButton");
@@ -136,50 +129,24 @@ export class WorldMapRender {
     modal.modal();
   }
 
-  private buildMap(countryData: Country[]): jvm.Map {
-    return new jvm.Map({
-      map: 'eurasia_map',
-      container: $('#world-map-container'),
-      series: {
-        regions: [{
-          attribute: 'fill',
-          stroke: '#000000',
-          "stroke-width": 1
-        }]
-      },
-      regionStyle: {
-        initial: {
-        fill: "white",
-       "fill-opacity": 1,
-        }
-      },
-      markerStyle: {
-        initial: {
-          fill: '#F8E23B',
-          stroke: '#383f47'
-        }
-      },
-      markers: [
-         {coords: [300, 95], name: 'Genghis Khan'}
-      ],
-      onRegionClick: (event: any, code: string) => {
-        const conqueredCountryEntries = countryData.filter(entry => entry.isConquered);
-        const conqueredCountryNames = conqueredCountryEntries.map(entry => entry.country);
-        const reachableCountries = conqueredCountryEntries
-          .map(entry => entry.neighbor)
-          .flat()
-          .filter(countryName => !conqueredCountryNames.includes(countryName));
+  private setupMapEventHandlers(): void {
+    this.mapRenderer.onRegionClick((code: string) => {
+      const conqueredCountryEntries = this.countryData.filter(entry => entry.isConquered);
+      const conqueredCountryNames = conqueredCountryEntries.map(entry => entry.country);
+      const reachableCountries = conqueredCountryEntries
+        .map(entry => entry.neighbor)
+        .flat()
+        .filter(countryName => !conqueredCountryNames.includes(code));
 
-        const clickedCountry = countryData.find(entry => entry.country === code);
-        if (!clickedCountry) return;
+      const clickedCountry = this.countryData.find(entry => entry.country === code);
+      if (!clickedCountry) return;
 
-        if (clickedCountry.isConquered) {
-          this.showCountryModalConquered(clickedCountry);
-        } else if (!reachableCountries.includes(code)) {
-          this.showCountryModalUnreachable(clickedCountry);
-        } else {
-          this.showCountryModalBeforeWar(clickedCountry);
-        }
+      if (clickedCountry.isConquered) {
+        this.showCountryModalConquered(clickedCountry);
+      } else if (!reachableCountries.includes(code)) {
+        this.showCountryModalUnreachable(clickedCountry);
+      } else {
+        this.showCountryModalBeforeWar(clickedCountry);
       }
     });
   }
@@ -194,7 +161,7 @@ export class WorldMapRender {
 
   public updateMapColors(): void {
     // Overwrite region colors
-    this.map.series.regions[0].setValues(this.generateColors());
+    this.mapRenderer.updateColors(this.generateColors());
   }
 
   private generateColors(): Record<string, string> {
@@ -207,85 +174,27 @@ export class WorldMapRender {
   private changeConqueredCountriesNewColor(colors: Record<string, string>): void {
     this.countryData.forEach(function(entry) {
       if (entry.isConquered) {
-        colors[entry.country] = "#FF6600";
+        colors[entry.country] = MAP_CONFIG.COLORS.CONQUERED;
       }
     });
   }
 
   private overrideCountriesOriginalColor(colors: Record<string, string>): void {
     // colors["Ocean"] = "#0051BB";
-    colors["Ocean"] = "#202020";
+    colors["Ocean"] = MAP_CONFIG.COLORS.OCEAN;
     // Not in the scope of the game
-    const NEUTRAL_COUNTRIES = [
-      "Norway", "Sweden", "Finland", "Estonia", "Denmark",
-      "Belgium", "United Kingdom", "Ireland", "Spain", "Portugal", "Iceland", "Luxembourg", "Netherlands",
-      "Lebanon", "Armenia", "Georgia", "Azerbaijan", "Qatar",
-      "Sri Lanka", "Indonesia", "Malaysia", "Papua New Guinea", "Philippines", "Taiwan", "Brunei"
-    ];
-    NEUTRAL_COUNTRIES.forEach(function(countryName) {
-      colors[countryName] = "#CCCCCC";
+    MAP_CONFIG.NEUTRAL_COUNTRIES.forEach(function(countryName) {
+      colors[countryName] = MAP_CONFIG.COLORS.NEUTRAL;
     });
-    colors["Albania"] = "#FFCC00";
-    colors["Afghanistan"] = "#99CC66";
-    colors["Austria"] = "#336F50";
-    colors["Bangladesh"] = "#FD2D95";
-    colors["Belarus"] = "#999900";
-    colors["Bhutan"] = "#FF99FF";
-    colors["Bosnia"] = "#66CC00";
-    colors["Bulgaria"] = "#6699CC";
-    colors["Cambodia"] = "#FFCC33";
-    colors["China"] = "#C18787";
-    colors["Croatia"] = "#33CCFF";
-    colors["Czech"] = "#FF99FF";
-    colors["France"] = "#FFCC00";
-    colors["Germany"] = "#666600";
-    colors["Greece"] = "#BA4B01";
-    colors["Hungary"] = "#FF9999";
-    colors["India"] = "#669900";
-    colors["Iran"] = "#FF9966";
-    colors["Iraq"] = "#669900";
-    colors["Israel"] = "#FF9900";
-    colors["Italy"] = "#66CC00";
-    colors["Japan"] = "#66CC00";
-    colors["Jordan"] = "#66FF00";
-    colors["Kazakhstan"] = "#66CC00";
-    colors["Kirghizstan"] = "#E4FD02";
-    colors["Korea"] = "#FFCC66";
-    colors["Kuwait"] = "#00CC99";
-    colors["Laos"] = "#999966";
-    colors["Latvia"] = "#99CC99";
-    colors["Lithuania"] = "#66CC00";
-    colors["Macedonia"] = "#FF66FF";
-    colors["Mongolia"] = "#FF6600";
-    colors["Moldavia"] = "#FB7BD6";
-    colors["Montenegro"] = "#999900";
-    colors["Myanmar"] = "#CCCC99";
-    colors["Nepal"] = "#FFCC66";
-    colors["Oman"] = "#999900";
-    colors["Pakistan"] = "#FFCC00";
-    colors["Poland"] = "#99CC99";
-    colors["Romania"] = "#FF9966";
-    colors["Russia"] = "#006666";
-    colors["Saudi Arabia"] = "#CC9999";
-    colors["Serbia"] = "#996600";
-    colors["Slovakia"] = "#33CC00";
-    colors["Slovenia"] = "#FF66FF";
-    colors["Syria"] = "#FE6785";
-    colors["Swiss"] = "#FF9999";
-    colors["Tajikistan"] = "#FF99FF";
-    colors["Thailand"] = "#FF99CC";
-    colors["Turkey"] = "#78BB77";
-    colors["Turkmenistan"] = "#996600";
-    colors["Ukraine"] = "#FFCC66";
-    colors["United Arab Emirates"] = "#FF9900";
-    colors["Uzbekistan"] = "#009999";
-    colors["Vietnam"] = "#FF9966";
-    colors["Yemen"] = "#996600";
+    // Set country colors from MAP_CONFIG
+    Object.entries(MAP_CONFIG.COUNTRY_COLORS).forEach(([countryName, color]) => {
+      colors[countryName] = color;
+    });
   }
 
   private handleBattleScreen(): void {
     $("#battle-map").show();
-    this.map.series.regions[0].setValues(this.generateColors());
+    this.mapRenderer.updateColors(this.generateColors());
     
     if (selectedCountryEntry) {
       this.startBattle(selectedCountryEntry);
@@ -395,7 +304,7 @@ export class WorldMapRender {
 
     if (selectedCountryEntry) {
       selectedCountryEntry.isConquered = true;
-      const bonusGold = goldBeforeBattle * interest;
+      const bonusGold = goldBeforeBattle * GAME_SETTINGS.INTEREST_RATE;
       this.updateGold(this.gold + Math.floor(bonusGold));
       this.updateMapColors();
     }
@@ -442,7 +351,7 @@ export class WorldMapRender {
       }
     }
     // Reset gold to default value
-    this.updateGold(400);
+    this.updateGold(GAME_SETTINGS.STARTING_GOLD);
     // Restore map to original
     this.updateMapColors();
   }
@@ -470,6 +379,18 @@ $("#buttonFightBattle").click(function() {
 });
 
 $("#buttonRetreatBattle").click(function() {
+  // Calculate and display the penalty amount
+  const penaltyAmount = Math.floor(self.gold * GAME_SETTINGS.RETREAT_PENALTY);
+  $("#retreatPenaltyAmount").text(penaltyAmount);
+  
+  // Show the confirmation modal
+  $("#retreatConfirmModal").modal();
+});
+
+// Handle confirmed retreat
+$("#confirmRetreat").click(function() {
+  $("#retreatConfirmModal").modal('hide');
+  
   $("#battle-map").hide();
   $("#world-map").show();
 
@@ -478,7 +399,7 @@ $("#buttonRetreatBattle").click(function() {
   // Clear unit type selector
   $("#unitTypeSelector").empty();
 
-  // Lose 10% of gold as a penalty
-  self.updateGold(Math.floor(self.gold * 0.9));
+  // Lose gold as a penalty for retreating
+  self.updateGold(Math.floor(self.gold * (1 - GAME_SETTINGS.RETREAT_PENALTY)));
 });
 

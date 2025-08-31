@@ -1,7 +1,7 @@
 import { Castle } from '../entities/Castle.js';
 import { TerrainType, FormationUnit } from '../types/types.js';
 import { Soldier as ISoldier } from '../entities/Soldier.js';
-import { BATTLE_CONSTANTS, COLORS, UI_CONSTANTS, UNIT_CONSTANTS, UNIT_SIZES } from '../constants/GameConstants.js';
+import { BATTLE_CONSTANTS, COLORS, UI_CONSTANTS, UNIT_CONSTANTS, UNIT_SIZES, SCREEN_DIMENSIONS } from '../constants/GameConstants.js';
 
 // Interface for tile objects
 interface Tile {
@@ -26,16 +26,16 @@ export class BattleRenderer {
     this.ctx.drawImage(imageArr[2], 630, 104);
 
     // top border
-    this.ctx.fillRect(0, 0, BATTLE_CONSTANTS.SCREEN_WIDTH, BATTLE_CONSTANTS.WORLD_Y);
+    this.ctx.fillRect(0, 0, SCREEN_DIMENSIONS.WIDTH, BATTLE_CONSTANTS.WORLD_Y);
     // bottom border
-    this.ctx.fillRect(0, BATTLE_CONSTANTS.WORLD_Y + (BATTLE_CONSTANTS.TILE_ROW * BATTLE_CONSTANTS.TILE_WIDTH), BATTLE_CONSTANTS.SCREEN_WIDTH, BATTLE_CONSTANTS.SCREEN_HEIGHT);
+    this.ctx.fillRect(0, BATTLE_CONSTANTS.WORLD_Y + (BATTLE_CONSTANTS.TILE_ROW * BATTLE_CONSTANTS.TILE_WIDTH), SCREEN_DIMENSIONS.WIDTH, SCREEN_DIMENSIONS.HEIGHT);
 
     // Health bar region
     this.ctx.fillStyle = COLORS.HEALTH_BAR_BACKGROUND;
     this.ctx.fillRect(6, 406, 415-6, 424-406);
 
     this.ctx.beginPath();
-    this.ctx.rect(0, 0, BATTLE_CONSTANTS.SCREEN_WIDTH, BATTLE_CONSTANTS.SCREEN_HEIGHT);
+    this.ctx.rect(0, 0, SCREEN_DIMENSIONS.WIDTH, SCREEN_DIMENSIONS.HEIGHT);
     this.ctx.stroke();
   }
 
@@ -250,11 +250,28 @@ export class BattleRenderer {
   }
 
   public drawCastleHealth(playerCastle: Castle, enemyCastle: Castle): void {
-    const playerCastleHealthPercent: number = UI_CONSTANTS.HEALTH_BAR_PIXEL_WIDTH * (playerCastle.hitPoints / playerCastle.maxHitPoints);
-    const enemyCastleHealthPercent: number = UI_CONSTANTS.HEALTH_BAR_PIXEL_WIDTH * (enemyCastle.hitPoints / enemyCastle.maxHitPoints);
+    const playerHealthPercent: number = (playerCastle.hitPoints / playerCastle.maxHitPoints) * 100;
+    const enemyHealthPercent: number = (enemyCastle.hitPoints / enemyCastle.maxHitPoints) * 100;
     
-    // Using jQuery for DOM manipulation (as in original code)
-    ($ as any)("#itemCurrentCountryHealth").css("width", playerCastleHealthPercent + "px");
-    ($ as any)("#itemEnemyCountryHealth").css("width", enemyCastleHealthPercent + "px");
+    // Update health bar widths using percentages
+    ($ as any)("#itemCurrentCountryHealth").css("width", playerHealthPercent + "%");
+    ($ as any)("#itemEnemyCountryHealth").css("width", enemyHealthPercent + "%");
+    
+    // Update health value displays
+    ($ as any)("#itemCurrentCountryHealth").closest('.health-bar-container').find('.health-value').text(Math.round(playerHealthPercent) + "%");
+    ($ as any)("#itemEnemyCountryHealth").closest('.health-bar-container').find('.health-value').text(Math.round(enemyHealthPercent) + "%");
+    
+    // Add low health warning effects
+    if (playerHealthPercent <= 25) {
+      ($ as any)("#itemCurrentCountryHealth").addClass('low-health');
+    } else {
+      ($ as any)("#itemCurrentCountryHealth").removeClass('low-health');
+    }
+    
+    if (enemyHealthPercent <= 25) {
+      ($ as any)("#itemEnemyCountryHealth").addClass('low-health');
+    } else {
+      ($ as any)("#itemEnemyCountryHealth").removeClass('low-health');
+    }
   }
 }
