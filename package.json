@@ -21,21 +21,21 @@
   },
   "dependencies": {
     "ejs": "^3.1.10",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "http": "^0.0.1-security",
     "jsvectormap": "^1.7.0",
-    "serve-static": "^2.2.0"
+    "serve-static": "^2.2.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.5",
+    "@types/express": "^5.0.6",
     "@types/jquery": "^3.5.33",
     "@types/serve-static": "^2.2.0",
-    "@typescript-eslint/eslint-plugin": "^8.48.0",
-    "@typescript-eslint/parser": "^8.48.0",
-    "eslint": "^9.39.1",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
-    "prettier": "^3.7.3",
+    "prettier": "^3.7.4",
     "rimraf": "^6.1.2"
   },
   "repository": {
