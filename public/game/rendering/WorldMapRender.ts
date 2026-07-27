@@ -17,11 +17,11 @@ const canvas = $("#battleScreen");
 const ctx = (canvas[0] as HTMLCanvasElement).getContext("2d");
 const battleScreenRender = new BattleScreenRender(ctx!);
 
-canvas[0].addEventListener('mousedown', function(e) {
+canvas[0].addEventListener('mousedown', function(e: MouseEvent) {
   battleScreenRender.placeNewPlayerUnit(canvas[0] as HTMLCanvasElement, e);
 });
 
-canvas[0].addEventListener('mousemove', function(e) {
+canvas[0].addEventListener('mousemove', function(e: MouseEvent) {
   battleScreenRender.handleMouseMove(canvas[0] as HTMLCanvasElement, e);
 });
 
