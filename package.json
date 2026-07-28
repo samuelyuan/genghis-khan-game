@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "ejs": "^5.0.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "jsvectormap": "^1.7.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
@@ -33,7 +34,7 @@
     "url": "git+https://github.com/samuelyuan/genghis-khan-game.git"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/samuelyuan/genghis-khan-game/issues"
   },

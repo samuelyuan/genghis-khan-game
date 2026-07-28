@@ -2,8 +2,6 @@
 
 A HTML5 and Javascript remake of the Flash game "Genghis Khan"
 
-This game uses the GNU AGPL license because it has a dependency on jVectorMap.
-
 The objective of the game is to conquer all countries in the known world.
 
 ## Getting Started

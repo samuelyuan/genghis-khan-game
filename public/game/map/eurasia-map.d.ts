@@ -1,18 +1,5 @@
-// Type declarations for eurasia-map.js and jQuery vectorMap plugin
-
-declare global {
-  interface JQuery {
-    vectorMap(options: any): JQuery;
-  }
-  
-  interface JQueryStatic {
-    fn: {
-      vectorMap: {
-        addMap: (mapName: string, mapData: any) => void;
-      };
-    };
-  }
-}
+// Type declarations for eurasia-map.js, which registers its data via the
+// ambient `jsVectorMap` global declared in ../types/jsvectormap-global.d.ts.
 
 // Map data structure
 declare const eurasiaMapData: {

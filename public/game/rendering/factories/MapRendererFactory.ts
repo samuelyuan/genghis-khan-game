@@ -1,17 +1,17 @@
 import { IMapRenderer } from '../../interfaces/IMapRenderer.js';
-import { JVectorMapAdapter } from '../adapters/JVectorMapAdapter.js';
+import { JsVectorMapAdapter } from '../adapters/JsVectorMapAdapter.js';
 import { MockMapAdapter } from '../adapters/MockMapAdapter.js';
 
 export enum MapRendererType {
-  JVECTOR_MAP = 'jvector_map',
+  JS_VECTOR_MAP = 'js_vector_map',
   MOCK = 'mock'
 }
 
 export class MapRendererFactory {
   static createMapRenderer(type: MapRendererType, container: JQuery): IMapRenderer {
     switch (type) {
-      case MapRendererType.JVECTOR_MAP:
-        return new JVectorMapAdapter(container);
+      case MapRendererType.JS_VECTOR_MAP:
+        return new JsVectorMapAdapter(container);
       case MapRendererType.MOCK:
         return new MockMapAdapter();
       default:
@@ -20,6 +20,6 @@ export class MapRendererFactory {
   }
 
   static createDefaultMapRenderer(container: JQuery): IMapRenderer {
-    return this.createMapRenderer(MapRendererType.JVECTOR_MAP, container);
+    return this.createMapRenderer(MapRendererType.JS_VECTOR_MAP, container);
   }
 }
