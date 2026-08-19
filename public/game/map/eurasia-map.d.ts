@@ -1,5 +1,4 @@
-// Type declarations for eurasia-map.js, which registers its data via the
-// ambient `jsVectorMap` global declared in ../types/jsvectormap-global.d.ts.
+// Types for eurasia-map.js; data registers via the ambient `jsVectorMap` global.
 
 // Map data structure
 declare const eurasiaMapData: {

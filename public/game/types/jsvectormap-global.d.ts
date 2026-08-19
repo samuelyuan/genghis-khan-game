@@ -1,6 +1,5 @@
-// jsvectormap loads via a <script> tag as a global (see views/index.ejs), not as
-// an ES module, so it has no bundled types and none are published on npm.
-// This declares just the surface this codebase actually uses.
+// jsvectormap loads as a global <script> (views/index.ejs); no published
+// types exist, so this declares only the surface this codebase uses.
 declare global {
   interface JsVectorMapData {
     width: number;

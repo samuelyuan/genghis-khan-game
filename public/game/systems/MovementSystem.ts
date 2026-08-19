@@ -3,6 +3,7 @@ import { Soldier } from '../entities/Soldier.js';
 import { Vector } from '../utils/Vector.js';
 import { SOLDIER_CONSTANTS } from '../constants/SoldierConstants.js';
 import { UnitState } from '../types/types.js';
+import { computeRotationStep } from './RotationMath.js';
 
 export class MovementSystem {
   constructor(private soldier: Soldier) {}
@@ -90,25 +91,15 @@ export class MovementSystem {
   }
 
   public updateUnitRotation(rotationDegrees: number, moveSpeed: number): void {
-    let unitRotation = this.soldier.rotation;
-    let angleDelta = rotationDegrees - unitRotation;
-    
-    // Normalize angle delta to -180 to 180 range
-    angleDelta = angleDelta % 360;
-    angleDelta = angleDelta % 360 >= 0 ? angleDelta : angleDelta + 360;
-    
-    let angleAbs = Math.abs(angleDelta);
-    let angleSign = angleAbs / angleDelta;
-    
-    if (angleAbs > SOLDIER_CONSTANTS.ANGLE_THRESHOLD) {
-      if (angleAbs > SOLDIER_CONSTANTS.ANGLE_WRAP_THRESHOLD) {
-        angleAbs = SOLDIER_CONSTANTS.FULL_CIRCLE - angleAbs;
-        angleSign = -angleSign;
-      }
-      
-      unitRotation = unitRotation + (angleSign * angleAbs * moveSpeed);
-      this.soldier.v.setAngle(unitRotation);
-      this.soldier.rotation = unitRotation;
+    const step = computeRotationStep(this.soldier.rotation, rotationDegrees, moveSpeed, {
+      angleThreshold: SOLDIER_CONSTANTS.ANGLE_THRESHOLD,
+      angleWrapThreshold: SOLDIER_CONSTANTS.ANGLE_WRAP_THRESHOLD,
+      fullCircle: SOLDIER_CONSTANTS.FULL_CIRCLE
+    });
+
+    if (step.changed) {
+      this.soldier.v.setAngle(step.newRotation);
+      this.soldier.rotation = step.newRotation;
     }
   }
 

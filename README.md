@@ -26,16 +26,16 @@ npm start
 
 Open your browser and navigate to `http://localhost:3000` to play the game.
 
-### Available Scripts
+### Running Tests
 
-- `npm run build` - Build the TypeScript project
-- `npm start` - Start the production server
-- `npm run dev:full` - Build and start in development mode
+```bash
+npm test
+```
 
 Screenshots
 ---
 
 <div style="display:inline-block;">
-<img src="https://github.com/samuelyuan/genghis-khan-game/raw/master/screenshots/worldmap.png" alt="World Map" width="400px" height="300px" />
-<img src="https://github.com/samuelyuan/genghis-khan-game/raw/master/screenshots/game.png" alt="Game" width="400px" height="300px" />
+<img src="screenshots/worldmap.png" alt="World Map" width="400px" height="300px" />
+<img src="screenshots/game.png" alt="Game" width="400px" height="300px" />
 </div>

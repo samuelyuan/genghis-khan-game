@@ -1,13 +1,7 @@
 import { Castle } from '../entities/Castle.js';
 import { Soldier } from '../entities/Soldier.js';
 import { UnitState } from '../types/types.js';
-
-// Type for enemy unit distance data
-interface EnemyUnitDistance {
-  rival: Soldier;
-  dist: number;
-  dy: number;
-}
+import { selectNearestTarget } from './TargetSelection.js';
 
 export class CombatSystem {
   constructor(private soldier: Soldier) {}
@@ -48,63 +42,14 @@ export class CombatSystem {
       }
     }
     
-    const currentX = this.soldier.xPos;
-    const currentY = this.soldier.yPos;
+    let enemyUnitsMatchingRival = selectNearestTarget(
+      this.soldier.xPos,
+      this.soldier.yPos,
+      rivalUnits,
+      this.soldier.hitDist,
+      this.soldier.rangeOffset
+    );
 
-    const allEnemyUnits: EnemyUnitDistance[] = rivalUnits
-      .filter(rivalUnit => !rivalUnit.isDead)
-      .map((rivalUnit: Soldier) => {
-        const rivalX = rivalUnit.xPos;
-        const rivalY = rivalUnit.yPos;
-        const deltaX = rivalX - currentX;
-        const deltaY = rivalY - currentY;
-        const unitDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        const deltaYAbs = Math.abs(deltaY);
-
-        // Get the distance of this unit to all rival units and find the units close enough for attacking
-        const rivalUnitDistance: EnemyUnitDistance = {
-          rival: rivalUnit,
-          dist: unitDist,
-          dy: deltaYAbs
-        };
-        return rivalUnitDistance;
-      });
-      
-    const enemyUnitsWithinMeleeUnit = allEnemyUnits.filter(rivalUnitDistance => rivalUnitDistance.dist < this.soldier.hitDist);
-    
-    // Check if there are any units for ranged units to attack
-    // Ranged units can attack over longer distances
-    let enemyUnitsWithinRangedUnit: EnemyUnitDistance[] = [];
-    if (enemyUnitsWithinMeleeUnit.length > 0) {
-      enemyUnitsWithinRangedUnit = allEnemyUnits
-        .filter(enemyUnit => enemyUnit.dist < this.soldier.hitDist + this.soldier.rangeOffset)
-        .filter(enemyUnit => enemyUnit.dist > this.soldier.hitDist);
-    }
-    
-    const candidateEnemyUnits = enemyUnitsWithinMeleeUnit.concat(enemyUnitsWithinRangedUnit);
-    const enemyUnitsAttack = [...candidateEnemyUnits];
-    
-    enemyUnitsAttack.sort((a: EnemyUnitDistance, b: EnemyUnitDistance) => {
-      return a.dy - b.dy;
-    });
-    
-    if (enemyUnitsAttack.length === 0) {
-      return;
-    }
-    
-    const expectedDeltaY = enemyUnitsAttack[0].dy;
-    const enemyUnitsMatching = enemyUnitsAttack.filter(unit => unit.dy === expectedDeltaY);
-    
-    enemyUnitsMatching.sort((a: EnemyUnitDistance, b: EnemyUnitDistance) => {
-      return a.dist - b.dist;
-    });
-    
-    if (enemyUnitsMatching.length === 0) {
-      return;
-    }
-    
-    let enemyUnitsMatchingRival = enemyUnitsMatching[0].rival;
-    
     // If current unit is already being attacked, finish fighting with this unit
     if (this.soldier.unitBeingAttackedBy) {
       enemyUnitsMatchingRival = this.soldier.unitBeingAttackedBy;
@@ -180,5 +125,3 @@ export class CombatSystem {
     return 'xLine' in target;
   }
 }
-
-export type { EnemyUnitDistance };
