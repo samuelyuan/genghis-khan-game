@@ -333,19 +333,19 @@ class BattleScreenRender {
     // Add terrain-specific images
     switch (landType) {
       case 'Plain':
-        terrainImage = '<img src="/img/terrain-plain.png" alt="Plains" style="max-width: 120px; max-height: 80px; width: auto; height: auto; border-radius: 4px; margin-top: 8px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load plains image\');">';
+        terrainImage = '<img src="/img/terrain-plain.png" alt="Plains" style="max-width: 70px; max-height: 46px; width: auto; height: auto; border-radius: 4px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load plains image\');">';
         break;
       case 'Forest':
-        terrainImage = '<img src="/img/terrain-forest.png" alt="Forest" style="max-width: 120px; max-height: 80px; width: auto; height: auto; border-radius: 4px; margin-top: 8px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load forest image\');">';
+        terrainImage = '<img src="/img/terrain-forest.png" alt="Forest" style="max-width: 70px; max-height: 46px; width: auto; height: auto; border-radius: 4px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load forest image\');">';
         break;
       case 'Grassland':
-        terrainImage = '<img src="/img/terrain-grassland.png" alt="Grassland" style="max-width: 120px; max-height: 80px; width: auto; height: auto; border-radius: 4px; margin-top: 8px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load grassland image\');">';
+        terrainImage = '<img src="/img/terrain-grassland.png" alt="Grassland" style="max-width: 70px; max-height: 46px; width: auto; height: auto; border-radius: 4px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load grassland image\');">';
         break;
       case 'Mountain':
-        terrainImage = '<img src="/img/terrain-mountain.png" alt="Mountain" style="max-width: 120px; max-height: 80px; width: auto; height: auto; border-radius: 4px; margin-top: 8px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load mountain image\');">';
+        terrainImage = '<img src="/img/terrain-mountain.png" alt="Mountain" style="max-width: 70px; max-height: 46px; width: auto; height: auto; border-radius: 4px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load mountain image\');">';
         break;
       default:
-        terrainImage = '<img src="/img/terrain-plain.png" alt="Default Terrain" style="max-width: 120px; max-height: 80px; width: auto; height: auto; border-radius: 4px; margin-top: 8px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load default image\');">';
+        terrainImage = '<img src="/img/terrain-plain.png" alt="Default Terrain" style="max-width: 70px; max-height: 46px; width: auto; height: auto; border-radius: 4px;" onerror="this.style.display=\'none\'; console.log(\'Failed to load default image\');">';
     }
 
     console.log(`Setting terrain info for: ${landType}, Image HTML: ${terrainImage}`);
